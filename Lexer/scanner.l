@@ -1,36 +1,25 @@
 %{
 #include <stdio.h>
+#include "../Parser/parser.tab.h"
 %}
 
 /* Definições de padrões de token e ações */
 %%
 
-if          { printf("KW_IF\n"); }
-while       { printf("KW_WHILE\n"); }
+"=="        {return OP_Igualdade; } /* adicionando operador de igualdade */
+"+"         {return '+'; }
+";"         {return ';'; }
 
-"//".*     { /* Ignorar comentários de linha */ }
+[0-9]+      { return NUMBER; } /* adicionando numeros*/
+[a-zA-Z_]+  { return IDENT; }  /* adicionando indentificadores*/
 
-"/*"([^*]|\*+[^*/])*\*+\/    { /* Ignorar comentários de bloco */ }
+[ \t\n]+    { /* ignora espaços e quebras de linha */ }
 
-[a-zA-Z_][a-zA-Z0-9_]*  { printf("IDENT(%s)\n", yytext); }
-
-[0-9]+(\.[0-9]+)?  { printf("NUMBER(%s)\n", yytext); }
-
-[+\-*/=]   { printf("OPERATOR(%s)\n", yytext); }
-
-[ \t\n]+  { /* Não faz nada */ }
-
-.  { printf("UNKNOWN(%s)\n", yytext); }
+.           { printf("Caractere desconhecido: %s\n", yytext); }
 
 %%
 
 /* Função auxiliar do Flex (quando termina o arquivo de entrada) */
 int yywrap(void) {
     return 1;
-}
-
-/* Função principal: executa o analisador léxico */
-int main(void) {
-    yylex();
-    return 0;
 }
