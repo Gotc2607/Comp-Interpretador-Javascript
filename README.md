@@ -28,6 +28,12 @@ Depois de rodar `./interpretador`, digite expressoes como:
 2 + 3 * 4;
 2 + 3 == 5;
 2 * 3 == 6;
+2 + 2 * 5 + 4 == 16;
+x += 5;
+x += 2 * 3;
+x + 1 == 12;
+1 == 1 && 2 == 2;
+1 == 0 && 2 == 2;
 ```
 
 Saidas esperadas:
@@ -35,6 +41,12 @@ Saidas esperadas:
 - `Resultado: 14`
 - `Resultado: 1`
 - `Resultado: 1`
+- `Resultado: 1`
+- `Resultado: 5`
+- `Resultado: 11`
+- `Resultado: 1`
+- `Resultado: 1`
+- `Resultado: 0`
 
 ## Teste automatico por pipe
 
