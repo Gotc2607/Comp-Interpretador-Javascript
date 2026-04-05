@@ -242,6 +242,71 @@ expressao:
 
 - Em igualdade, o resultado vira `1` (verdadeiro) ou `0` (falso).
 
+## 2.4 Operadores com estado (ex.: `+=`, `-=`, `=`)
+
+Alguns operadores nao apenas calculam, eles tambem **atualizam estado**.
+Esse e o caso de operadores de atribuicao composta como `+=`.
+
+Para esse tipo de operador, alem de `%union` e `yylval`, voce precisa de uma tabela de simbolos.
+
+### O que a tabela de simbolos faz
+
+- Guarda pares `nome -> valor` (ex.: `x -> 11`).
+- Permite ler o valor atual (`get_var`).
+- Permite atualizar/criar valor (`set_var`).
+
+Sem isso, `IDENT += expressao` nao tem como funcionar, porque o parser nao sabe onde guardar o novo valor da variavel.
+
+### Fluxo semantico de `x += 5`
+
+1. Ler valor atual de `x` com `get_var("x")`.
+2. Somar com valor da direita (`+ 5`).
+3. Gravar de volta com `set_var("x", novo_valor)`.
+4. Retornar o resultado em `$$`.
+
+### Regra no Bison (ideia geral)
+
+```bison
+| IDENT OP_atribuicao_soma expressao {
+    int novo = get_var($1) + $3;
+    set_var($1, novo);
+    $$ = novo;
+    free($1);
+}
+```
+
+Observacao:
+
+- Como `IDENT` vem de `strdup` no lexer, use `free($1)` depois da acao para evitar vazamento de memoria.
+
+### Quando usar `IDENT` explicito na gramatica
+
+Regra pratica para novos operadores:
+
+1. Use `IDENT` explicito quando o operador altera diretamente uma variavel.
+2. Use `expressao OPERADOR expressao` quando o operador apenas combina/calcula valores.
+
+Exemplos de operadores que alteram variavel (lado esquerdo com `IDENT`):
+
+```bison
+| IDENT '=' expressao
+| IDENT OP_atribuicao_soma expressao
+| IDENT OP_atribuicao_sub expressao
+```
+
+Exemplos de operadores de calculo geral (sem `IDENT` explicito):
+
+```bison
+| expressao '+' expressao
+| expressao '*' expressao
+| expressao OP_Igualdade expressao
+```
+
+Motivo:
+
+- Em operadores de calculo, `IDENT` ja entra de forma indireta pela regra base da expressao (ex.: `expressao: IDENT { ... }`).
+- Em operadores de atribuicao, a gramatica precisa identificar explicitamente qual variavel sera atualizada.
+
 ---
 
 ## Exemplo Pratico Completo: Operador de Multiplicacao (`*`)
@@ -428,6 +493,79 @@ Em Bison, isso significa declarar nessa sequencia (de cima para baixo):
 %left '+'
 %left '*'
 ```
+
+## Exemplo Adicional: Operador `+=`
+
+Este exemplo mostra como adicionar um operador de atribuicao composta, que exige estado.
+
+### 1) Flex (`scanner.l`)
+
+```lex
+"+="        { return OP_atribuicao_soma; }
+"+"         { return '+'; }
+```
+
+### 2) Bison: token e precedencia (`parser.y`)
+
+```bison
+%token OP_atribuicao_soma
+
+/* Menor -> maior precedencia */
+%right OP_atribuicao_soma
+%left OP_Igualdade
+%left '+'
+%left '*'
+```
+
+### 3) Bison: tabela de simbolos minima
+
+```c
+#define MAX_VARS 256
+
+typedef struct {
+        char nome[64];
+        int valor;
+} Variavel;
+
+static Variavel tabela[MAX_VARS];
+static int qtd_vars = 0;
+
+static int find_var(const char *nome);
+static int get_var(const char *nome);
+static void set_var(const char *nome, int valor);
+```
+
+### 4) Bison: regra semantica de `+=`
+
+```bison
+expressao:
+            NUMBER { $$ = $1; }
+        | IDENT  { $$ = get_var($1); free($1); }
+        | IDENT OP_atribuicao_soma expressao {
+                    int novo = get_var($1) + $3;
+                    set_var($1, novo);
+                    $$ = novo;
+                    free($1);
+            }
+        | expressao '+' expressao { $$ = $1 + $3; }
+        | expressao '*' expressao { $$ = $1 * $3; }
+        | expressao OP_Igualdade expressao { $$ = ($1 == $3); }
+        ;
+```
+
+### 5) Teste sugerido para `+=`
+
+```txt
+x += 5;
+x += 2 * 3;
+x + 1 == 12;
+```
+
+Resultados esperados:
+
+- `x += 5;` -> `5`
+- `x += 2 * 3;` -> `11`
+- `x + 1 == 12;` -> `1`
 
 ---
 

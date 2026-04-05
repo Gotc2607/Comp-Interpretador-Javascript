@@ -3,6 +3,50 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+#define MAX_VARS 256
+
+typedef struct {
+    char nome[64];
+    int valor;
+} Variavel;
+
+static Variavel tabela[MAX_VARS];
+static int qtd_vars = 0;
+
+static int find_var(const char *nome) {
+    int i;
+    for (i = 0; i < qtd_vars; i++) {
+        if (strcmp(tabela[i].nome, nome) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+static int get_var(const char *nome) {
+    int idx = find_var(nome);
+    if (idx >= 0) {
+        return tabela[idx].valor;
+    }
+    return 0;
+}
+
+static void set_var(const char *nome, int valor) {
+    int idx = find_var(nome);
+    if (idx >= 0) {
+        tabela[idx].valor = valor;
+        return;
+    }
+
+    if (qtd_vars < MAX_VARS) {
+        strncpy(tabela[qtd_vars].nome, nome, sizeof(tabela[qtd_vars].nome) - 1);
+        tabela[qtd_vars].nome[sizeof(tabela[qtd_vars].nome) - 1] = '\0';
+        tabela[qtd_vars].valor = valor;
+        qtd_vars++;
+    }
+}
 
 int yylex(void);
 void yyerror(const char *s);
@@ -26,13 +70,17 @@ void yyerror(const char *s);
 %token <ival> NUMBER
 %token <sval> IDENT
 %token OP_Igualdade
+%token OP_AND
 %token '+'
 %token '*'
+%token OP_atribuicao_soma
 
 %type <ival> expressao
 
 /* Menor -> maior precedencia. */
 
+%right OP_atribuicao_soma
+%left OP_AND
 %left OP_Igualdade
 %left '+'
 %left '*'
@@ -50,6 +98,14 @@ Linha:
 /* Nesta etapa, a semantica calcula expressoes numericas. */
 expressao:
     NUMBER { $$ = $1; }
+    | IDENT  { $$ = get_var($1); free($1); }
+    | IDENT OP_atribuicao_soma expressao {
+        int novo = get_var($1) + $3;
+        set_var($1, novo);
+        $$ = novo;
+        free($1);
+    }
+    | expressao OP_AND { $$ = ($1 && $3); }
     | expressao OP_Igualdade expressao { $$ = ($1 == $3); }
     | expressao '+' expressao { $$ = $1 + $3; }
     | expressao '*' expressao { $$ = $1 * $3; }
