@@ -505,7 +505,7 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int8 yyrline[] =
 {
-       0,    42,    42,    43,    47,    51,    52,    53,    54
+       0,    42,    42,    43,    47,    52,    53,    54,    55
 };
 #endif
 
@@ -1074,25 +1074,25 @@ yyreduce:
     break;
 
   case 5: /* expressao: NUMBER  */
-#line 51 "Parser/parser.y"
+#line 52 "Parser/parser.y"
            { (yyval.ival) = (yyvsp[0].ival); }
 #line 1080 "Parser/parser.tab.c"
     break;
 
   case 6: /* expressao: expressao OP_Igualdade expressao  */
-#line 52 "Parser/parser.y"
+#line 53 "Parser/parser.y"
                                        { (yyval.ival) = ((yyvsp[-2].ival) == (yyvsp[0].ival)); }
 #line 1086 "Parser/parser.tab.c"
     break;
 
   case 7: /* expressao: expressao '+' expressao  */
-#line 53 "Parser/parser.y"
+#line 54 "Parser/parser.y"
                               { (yyval.ival) = (yyvsp[-2].ival) + (yyvsp[0].ival); }
 #line 1092 "Parser/parser.tab.c"
     break;
 
   case 8: /* expressao: expressao '*' expressao  */
-#line 54 "Parser/parser.y"
+#line 55 "Parser/parser.y"
                               { (yyval.ival) = (yyvsp[-2].ival) * (yyvsp[0].ival); }
 #line 1098 "Parser/parser.tab.c"
     break;
@@ -1291,7 +1291,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 57 "Parser/parser.y"
+#line 58 "Parser/parser.y"
 
 
 
