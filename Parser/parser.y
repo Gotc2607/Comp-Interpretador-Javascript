@@ -1,42 +1,58 @@
 %{
-/* 1. PROLÓGO (Código C) */
-// Aqui você coloca os #include e declarações de funções que o C precisa.
+/* Prologo C: includes e declaracoes auxiliares. */
 
 #include <stdio.h>
 #include <stdlib.h>
 
 int yylex(void);
 void yyerror(const char *s);
+
 %}
 
-/* 2. DECLARAÇÕES DO BISON */
-// Aqui você define os "Tokens" (as palavras que o Flex envia)
-// e a precedência (quem manda mais na matemática).
 
+%union {
+    int ival;
+    char *sval;
+}
 
-%token OP_Igualdade NUMBER IDENT
+/*
+ * Declaracoes do Bison (ordem recomendada no operadores.md):
+ * 1) %union
+ * 2) %token
+ * 3) %type
+ * 4) precedencia
+ */
+
+%token <ival> NUMBER
+%token <sval> IDENT
+%token OP_Igualdade
 %token '+'
+%token '*'
 
-/* Colocar a Procedencia: sentido no qual o comando é lido*/
+%type <ival> expressao
+
+/* Menor -> maior precedencia. */
+
 %left OP_Igualdade
 %left '+'
+%left '*'
 
 %%
-/* 3. REGRAS GRAMATICAIS */
-// Aqui você define a estrutura da linguagem (o "cérebro").
+/* Regras gramaticais + acoes semanticas. */
 programa:
     | programa Linha
     ;
 
 Linha:
-    expressao ';' { printf("Comando aceito!\n"); }
+    expressao ';' { printf("Resultado: %d\n", $1); }
     ;
 
+/* Nesta etapa, a semantica calcula expressoes numericas. */
 expressao:
-    NUMBER
-    | IDENT
-    | expressao OP_Igualdade expressao
-    | expressao '+' expressao
+    NUMBER { $$ = $1; }
+    | expressao OP_Igualdade expressao { $$ = ($1 == $3); }
+    | expressao '+' expressao { $$ = $1 + $3; }
+    | expressao '*' expressao { $$ = $1 * $3; }
     ;
 
 %%

@@ -1,25 +1,39 @@
 %{
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "../Parser/parser.tab.h"
 %}
 
-/* Definições de padrões de token e ações */
+/*
+ * Etapa semantica (conforme operadores.md):
+ * - Reconhece operadores e simbolos.
+ * - Preenche yylval para NUMBER/IDENT.
+ */
 %%
 
-"=="        {return OP_Igualdade; } /* adicionando operador de igualdade */
-"+"         {return '+'; }
-";"         {return ';'; }
+"=="        { return OP_Igualdade; }
+"+"         { return '+'; }
+"*"         { return '*'; }
+";"         { return ';'; }
 
-[0-9]+      { return NUMBER; } /* adicionando numeros*/
-[a-zA-Z_]+  { return IDENT; }  /* adicionando indentificadores*/
+[0-9]+      {
+    yylval.ival = atoi(yytext);
+    return NUMBER;
+}
 
-[ \t\n]+    { /* ignora espaços e quebras de linha */ }
+[a-zA-Z_][a-zA-Z0-9_]* {
+    yylval.sval = strdup(yytext);
+    return IDENT;
+}
+
+[ \t\n]+    { /* ignora espacos */ }
 
 .           { printf("Caractere desconhecido: %s\n", yytext); }
 
 %%
 
-/* Função auxiliar do Flex (quando termina o arquivo de entrada) */
+/* Fim do arquivo de entrada. */
 int yywrap(void) {
     return 1;
 }
