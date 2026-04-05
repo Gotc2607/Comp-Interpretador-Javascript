@@ -105,7 +105,7 @@ expressao:
         $$ = novo;
         free($1);
     }
-    | expressao OP_AND { $$ = ($1 && $3); }
+    | expressao OP_AND expressao { $$ = ($1 && $3); }
     | expressao OP_Igualdade expressao { $$ = ($1 == $3); }
     | expressao '+' expressao { $$ = $1 + $3; }
     | expressao '*' expressao { $$ = $1 * $3; }

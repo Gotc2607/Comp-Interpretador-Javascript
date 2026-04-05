@@ -57,7 +57,8 @@ extern int yydebug;
     NUMBER = 258,                  /* NUMBER  */
     IDENT = 259,                   /* IDENT  */
     OP_Igualdade = 260,            /* OP_Igualdade  */
-    OP_atribuicao_soma = 261       /* OP_atribuicao_soma  */
+    OP_AND = 261,                  /* OP_AND  */
+    OP_atribuicao_soma = 262       /* OP_atribuicao_soma  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -71,7 +72,7 @@ union YYSTYPE
     int ival;
     char *sval;
 
-#line 75 "Parser/parser.tab.h"
+#line 76 "Parser/parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
