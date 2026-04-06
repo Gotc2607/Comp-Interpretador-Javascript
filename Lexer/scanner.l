@@ -20,6 +20,10 @@
 "/"         { return '/'; }  
 ";"         { return ';'; }
 "-"	        {return '-'; }
+">"         {return '>'; }
+"<"         {return '<'; }
+
+
 [0-9]+      {
     yylval.ival = atoi(yytext);
     return NUMBER;
