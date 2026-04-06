@@ -17,6 +17,7 @@
 "&&"        { return OP_AND; }
 "+"         { return '+'; }
 "*"         { return '*'; }
+"/"         { return '/'; }  
 ";"         { return ';'; }
 "-"	        {return '-'; }
 [0-9]+      {

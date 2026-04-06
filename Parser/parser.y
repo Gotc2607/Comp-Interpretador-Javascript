@@ -75,6 +75,7 @@ void yyerror(const char *s);
 %token '*'
 %token OP_atribuicao_soma
 %token '-'
+%token '/'
 
 %type <ival> expressao
 
@@ -84,7 +85,7 @@ void yyerror(const char *s);
 %left OP_AND
 %left OP_Igualdade
 %left '+' '-'
-%left '*'
+%left '*' '/'
 
 
 %%
@@ -112,7 +113,16 @@ expressao:
     | expressao '+' expressao { $$ = $1 + $3; }
     | expressao '*' expressao { $$ = $1 * $3; }
     | expressao '-' expressao { $$ = $1 - $3; }
+    | expressao '/' expressao { 
+        if ($3 == 0) {
+            printf("Erro: Divisao por zero!\n");
+            $$ = 0; 
+        } else {
+            $$ = $1 / $3; 
+        }
+    }
     ;
+    
 
 %%
 
