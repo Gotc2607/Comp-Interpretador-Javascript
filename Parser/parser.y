@@ -78,6 +78,7 @@ void yyerror(const char *s);
 %token '/'
 %token '>'
 %token '<'
+%token OP_Diferente
 
 %type <ival> expressao
 
@@ -85,7 +86,7 @@ void yyerror(const char *s);
 
 %right OP_atribuicao_soma
 %left OP_AND
-%left OP_Igualdade
+%left OP_Igualdade OP_Diferente
 %left '<' '>'
 %left '+' '-'
 %left '*' '/'
@@ -113,6 +114,7 @@ expressao:
     }
     | expressao OP_AND expressao { $$ = ($1 && $3); }
     | expressao OP_Igualdade expressao { $$ = ($1 == $3); }
+    | expressao OP_Diferente expressao { $$ = ($1 != $3); }
     | expressao '+' expressao { $$ = $1 + $3; }
     | expressao '*' expressao { $$ = $1 * $3; }
     | expressao '-' expressao { $$ = $1 - $3; }

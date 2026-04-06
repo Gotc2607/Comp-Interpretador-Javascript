@@ -13,15 +13,16 @@
 %%
 
 "=="        { return OP_Igualdade; }
+"!="        { return OP_Diferente; }
 "+="        { return OP_atribuicao_soma; }
 "&&"        { return OP_AND; }
 "+"         { return '+'; }
 "*"         { return '*'; }
 "/"         { return '/'; }  
 ";"         { return ';'; }
-"-"	        {return '-'; }
-">"         {return '>'; }
-"<"         {return '<'; }
+"-"	        { return '-'; }
+">"         { return '>'; }
+"<"         { return '<'; }
 
 
 [0-9]+      {
