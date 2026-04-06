@@ -74,6 +74,7 @@ void yyerror(const char *s);
 %token '+'
 %token '*'
 %token OP_atribuicao_soma
+%token '-'
 
 %type <ival> expressao
 
@@ -82,8 +83,9 @@ void yyerror(const char *s);
 %right OP_atribuicao_soma
 %left OP_AND
 %left OP_Igualdade
-%left '+'
+%left '+' '-'
 %left '*'
+
 
 %%
 /* Regras gramaticais + acoes semanticas. */
@@ -109,6 +111,7 @@ expressao:
     | expressao OP_Igualdade expressao { $$ = ($1 == $3); }
     | expressao '+' expressao { $$ = $1 + $3; }
     | expressao '*' expressao { $$ = $1 * $3; }
+    | expressao '-' expressao { $$ = $1 - $3; }
     ;
 
 %%
