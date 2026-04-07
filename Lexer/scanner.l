@@ -23,6 +23,7 @@
 "-"	        { return '-'; }
 ">"         { return '>'; }
 "<"         { return '<'; }
+"||"        { return OP_OR; }
 
 
 [0-9]+      {

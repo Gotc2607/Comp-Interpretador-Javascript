@@ -70,6 +70,7 @@ void yyerror(const char *s);
 %token <ival> NUMBER
 %token <sval> IDENT
 %token OP_Igualdade
+%token OP_OR
 %token OP_AND
 %token '+'
 %token '*'
@@ -85,6 +86,7 @@ void yyerror(const char *s);
 /* Menor -> maior precedencia. */
 
 %right OP_atribuicao_soma
+%left OP_OR
 %left OP_AND
 %left OP_Igualdade OP_Diferente
 %left '<' '>'
@@ -113,6 +115,7 @@ expressao:
         free($1);
     }
     | expressao OP_AND expressao { $$ = ($1 && $3); }
+    | expressao OP_OR expressao { $$ = ($1 || $3); }
     | expressao OP_Igualdade expressao { $$ = ($1 == $3); }
     | expressao OP_Diferente expressao { $$ = ($1 != $3); }
     | expressao '+' expressao { $$ = $1 + $3; }
