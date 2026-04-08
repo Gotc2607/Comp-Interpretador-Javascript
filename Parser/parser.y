@@ -81,6 +81,7 @@ void yyerror(const char *s);
 %token '>'
 %token '<'
 %token OP_Diferente
+%token '!'
 
 %type <ival> expressao
 
@@ -94,6 +95,7 @@ void yyerror(const char *s);
 %left '<' '>'
 %left '+' '-'
 %left '*' '/'
+%right '!'
 
 
 %%
@@ -140,6 +142,7 @@ expressao:
             $$ = $1 / $3; 
         }
     }
+    | '!' expressao { $$ = !$2; }
     ;
     
 

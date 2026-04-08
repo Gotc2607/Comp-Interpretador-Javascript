@@ -25,6 +25,7 @@
 ">"         { return '>'; }
 "<"         { return '<'; }
 "||"        { return OP_OR; }
+"!"         { return '!'; }
 
 
 [0-9]+      {
