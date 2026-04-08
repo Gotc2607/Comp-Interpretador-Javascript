@@ -24,6 +24,9 @@
 ">"         { return '>'; }
 "<"         { return '<'; }
 "||"        { return OP_OR; }
+"**"        { return OP_EXP; }
+"++"        { return OP_INCREMENT; }
+"--"        { return OP_DECREMENT; }
 
 
 [0-9]+      {

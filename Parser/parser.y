@@ -80,6 +80,9 @@ void yyerror(const char *s);
 %token '>'
 %token '<'
 %token OP_Diferente
+%token OP_EXP
+%token OP_INCREMENT
+%token OP_DECREMENT
 
 %type <ival> expressao
 
@@ -108,6 +111,18 @@ Linha:
 expressao:
     NUMBER { $$ = $1; }
     | IDENT  { $$ = get_var($1); free($1); }
+    | IDENT OP_INCREMENT{ 
+        int novo = get_var($1) + 1;
+        set_var($1, novo);
+        $$ = novo;
+        free($1);
+        }
+    | IDENT OP_DECREMENT{ 
+        int novo = get_var($1) - 1;
+        set_var($1, novo);
+        $$ = novo;
+        free($1);
+        }
     | IDENT OP_atribuicao_soma expressao {
         int novo = get_var($1) + $3;
         set_var($1, novo);
@@ -131,6 +146,13 @@ expressao:
             $$ = $1 / $3; 
         }
     }
+    | expressao OP_EXP expressao {
+        int resultado = 1;
+        for (int i = 0; i < $3; i++) {
+            resultado *= $1;
+        }
+    $$ = resultado;
+}
     ;
     
 
