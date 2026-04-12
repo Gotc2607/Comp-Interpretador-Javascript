@@ -27,7 +27,10 @@
 "**"        { return OP_EXP; }
 "++"        { return OP_INCREMENT; }
 "--"        { return OP_DECREMENT; }
-
+"="         { return '='; }
+"%"         { return '%'; }
+"<="        { return OP_Menor_igual; }
+">="        { return OP_Maior_igual; }
 
 [0-9]+      {
     yylval.ival = atoi(yytext);

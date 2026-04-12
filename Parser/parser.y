@@ -83,6 +83,10 @@ void yyerror(const char *s);
 %token OP_EXP
 %token OP_INCREMENT
 %token OP_DECREMENT
+%token '='
+%token '%'
+%token OP_Maior_igual
+%token OP_Menor_igual
 
 %type <ival> expressao
 
@@ -95,6 +99,7 @@ void yyerror(const char *s);
 %left '<' '>'
 %left '+' '-'
 %left '*' '/'
+%left OP_Maior_igual OP_Menor_igual
 
 
 %%
@@ -111,13 +116,19 @@ Linha:
 expressao:
     NUMBER { $$ = $1; }
     | IDENT  { $$ = get_var($1); free($1); }
-    | IDENT OP_INCREMENT{ 
+    | IDENT '=' expressao { 
+        int novo = $3;
+        set_var($1, novo);
+        $$ = novo;
+        free($1);
+        }
+    | IDENT OP_INCREMENT { 
         int novo = get_var($1) + 1;
         set_var($1, novo);
         $$ = novo;
         free($1);
         }
-    | IDENT OP_DECREMENT{ 
+    | IDENT OP_DECREMENT { 
         int novo = get_var($1) - 1;
         set_var($1, novo);
         $$ = novo;
@@ -138,6 +149,8 @@ expressao:
     | expressao '-' expressao { $$ = $1 - $3; }
     | expressao '>' expressao { $$ = ($1 > $3); }
     | expressao '<' expressao { $$ = ($1 < $3); }
+    | expressao OP_Menor_igual expressao { $$ =($1 <= $3); }
+    | expressao OP_Maior_igual expressao { $$ =($1 >= $3); }
     | expressao '/' expressao { 
         if ($3 == 0) {
             printf("Erro: Divisao por zero!\n");
@@ -146,6 +159,7 @@ expressao:
             $$ = $1 / $3; 
         }
     }
+    | expressao '%' expressao { $$ = ($1 % $3); }
     | expressao OP_EXP expressao {
         int resultado = 1;
         for (int i = 0; i < $3; i++) {
