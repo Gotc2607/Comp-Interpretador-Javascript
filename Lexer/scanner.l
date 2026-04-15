@@ -12,10 +12,15 @@
  */
 %%
 
+
 "=="        { return OP_Igualdade; }
 "!="        { return OP_Diferente; }
 "+="        { return OP_atribuicao_soma; }
 "-="        { return OP_atribuicao_subtracao; }
+"*="        { return OP_atribuicao_multiplicacao; }
+"/="        { return OP_atribuicao_divisao; }
+"**="       { return OP_atribuicao_potencia; }
+"%="        { return OP_atribuicao_resto; }
 "&&"        { return OP_AND; }
 "+"         { return '+'; }
 "*"         { return '*'; }
