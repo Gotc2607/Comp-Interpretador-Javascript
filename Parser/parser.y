@@ -76,9 +76,9 @@ void yyerror(const char *s);
 %token '*'
 %token OP_atribuicao_soma
 %token OP_atribuicao_subtracao
+%token OP_atribuicao_potencia
 %token OP_atribuicao_multiplicacao
 %token OP_atribuicao_divisao
-%token OP_atribuicao_potencia
 %token OP_atribuicao_resto
 %token '-'
 %token '/'
@@ -93,9 +93,9 @@ void yyerror(const char *s);
 
 %right OP_atribuicao_soma
 %right OP_atribuicao_subtracao
+%right OP_atribuicao_potencia
 %right OP_atribuicao_multiplicacao
 %right OP_atribuicao_divisao
-%right OP_atribuicao_potencia
 %right OP_atribuicao_resto
 %left OP_OR
 %left OP_AND
@@ -132,6 +132,12 @@ expressao:
         $$ = novo;
         free($1);
     }
+    | IDENT OP_atribuicao_potencia expressao {
+        double novo = pow(get_var($1), $3);
+        set_var($1, novo);
+        $$ = novo;
+        free($1);
+    }
     | IDENT OP_atribuicao_multiplicacao expressao {
         int novo = get_var($1) * $3;
         set_var($1, novo);
@@ -140,12 +146,6 @@ expressao:
     }
     | IDENT OP_atribuicao_divisao expressao {
         int novo = get_var($1) / $3;
-        set_var($1, novo);
-        $$ = novo;
-        free($1);
-    }
-    | IDENT OP_atribuicao_potencia expressao {
-        int novo = get_var($1) ** $3;
         set_var($1, novo);
         $$ = novo;
         free($1);
