@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #define MAX_VARS 256
 
@@ -74,6 +75,7 @@ void yyerror(const char *s);
 %token OP_AND
 %token '+'
 %token '*'
+%token '{' '}'
 %token OP_atribuicao_soma
 %token OP_atribuicao_subtracao
 %token OP_atribuicao_potencia
@@ -109,12 +111,25 @@ void yyerror(const char *s);
 %%
 /* Regras gramaticais + acoes semanticas. */
 programa:
-    | programa Linha
-    ;
+    | programa elemento
+;
+
+elemento:
+    Linha
+    | Bloco
+;
 
 Linha:
     expressao ';' { printf("Resultado: %d\n", $1); }
-    ;
+;
+
+Bloco:
+    '{' lista_linhas '}'
+;
+
+lista_linhas:
+    | lista_linhas elemento
+;
 
 /* Nesta etapa, a semantica calcula expressoes numericas. */
 expressao:
@@ -133,7 +148,7 @@ expressao:
         free($1);
     }
     | IDENT OP_atribuicao_potencia expressao {
-        double novo = pow(get_var($1), $3);
+        int novo = (int) pow(get_var($1), $3);
         set_var($1, novo);
         $$ = novo;
         free($1);

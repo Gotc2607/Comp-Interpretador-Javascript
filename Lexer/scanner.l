@@ -26,6 +26,8 @@
 "*"         { return '*'; }
 "/"         { return '/'; }  
 ";"         { return ';'; }
+"{"         { return '{'; }
+"}"         { return '}'; }
 "-"	        { return '-'; }
 ">"         { return '>'; }
 "<"         { return '<'; }
