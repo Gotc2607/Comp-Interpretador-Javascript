@@ -44,6 +44,12 @@
 #if YYDEBUG
 extern int yydebug;
 #endif
+/* "%code requires" blocks.  */
+#line 16 "Parser/parser.y"
+
+#include "ast.h"
+
+#line 53 "Parser/parser.tab.h"
 
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
@@ -61,7 +67,11 @@ extern int yydebug;
     OP_AND = 262,                  /* OP_AND  */
     OP_atribuicao_soma = 263,      /* OP_atribuicao_soma  */
     OP_atribuicao_subtracao = 264, /* OP_atribuicao_subtracao  */
-    OP_Diferente = 265             /* OP_Diferente  */
+    OP_atribuicao_potencia = 265,  /* OP_atribuicao_potencia  */
+    OP_atribuicao_multiplicacao = 266, /* OP_atribuicao_multiplicacao  */
+    OP_atribuicao_divisao = 267,   /* OP_atribuicao_divisao  */
+    OP_atribuicao_resto = 268,     /* OP_atribuicao_resto  */
+    OP_Diferente = 269             /* OP_Diferente  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -70,12 +80,13 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 57 "Parser/parser.y"
+#line 21 "Parser/parser.y"
 
     int ival;
     char *sval;
+    ASTNode *node;
 
-#line 79 "Parser/parser.tab.h"
+#line 90 "Parser/parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

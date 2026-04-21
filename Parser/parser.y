@@ -3,61 +3,25 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <math.h>
 
-#define MAX_VARS 256
-
-typedef struct {
-    char nome[64];
-    int valor;
-} Variavel;
-
-static Variavel tabela[MAX_VARS];
-static int qtd_vars = 0;
-
-static int find_var(const char *nome) {
-    int i;
-    for (i = 0; i < qtd_vars; i++) {
-        if (strcmp(tabela[i].nome, nome) == 0) {
-            return i;
-        }
-    }
-    return -1;
-}
-
-static int get_var(const char *nome) {
-    int idx = find_var(nome);
-    if (idx >= 0) {
-        return tabela[idx].valor;
-    }
-    return 0;
-}
-
-static void set_var(const char *nome, int valor) {
-    int idx = find_var(nome);
-    if (idx >= 0) {
-        tabela[idx].valor = valor;
-        return;
-    }
-
-    if (qtd_vars < MAX_VARS) {
-        strncpy(tabela[qtd_vars].nome, nome, sizeof(tabela[qtd_vars].nome) - 1);
-        tabela[qtd_vars].nome[sizeof(tabela[qtd_vars].nome) - 1] = '\0';
-        tabela[qtd_vars].valor = valor;
-        qtd_vars++;
-    }
-}
+#include "ast.h"
 
 int yylex(void);
 void yyerror(const char *s);
 
+static ASTNode *raiz = NULL;
+
 %}
+
+%code requires {
+#include "ast.h"
+}
 
 
 %union {
     int ival;
     char *sval;
+    ASTNode *node;
 }
 
 /*
@@ -89,7 +53,7 @@ void yyerror(const char *s);
 %token OP_Diferente
 %token '!'
 
-%type <ival> expressao
+%type <node> programa elementos elemento Linha Bloco lista_linhas expressao
 
 /* Menor -> maior precedencia. */
 
@@ -111,7 +75,12 @@ void yyerror(const char *s);
 %%
 /* Regras gramaticais + acoes semanticas. */
 programa:
-    | programa elemento
+    elementos { raiz = $1; $$ = $1; }
+;
+
+elementos:
+    /* vazio */ { $$ = NULL; }
+    | elementos elemento { $$ = ast_sequence($1, $2); }
 ;
 
 elemento:
@@ -120,76 +89,40 @@ elemento:
 ;
 
 Linha:
-    expressao ';' { printf("Resultado: %d\n", $1); }
+    expressao ';' { $$ = ast_print_stmt($1); }
 ;
 
 Bloco:
-    '{' lista_linhas '}'
+    '{' lista_linhas '}' { $$ = ast_block($2); }
 ;
 
 lista_linhas:
-    | lista_linhas elemento
+    /* vazio */ { $$ = NULL; }
+    | lista_linhas elemento { $$ = ast_sequence($1, $2); }
 ;
 
-/* Nesta etapa, a semantica calcula expressoes numericas. */
+/* A AST representa expressoes, atribuicoes e operacoes logicas. */
 expressao:
-    NUMBER { $$ = $1; }
-    | IDENT  { $$ = get_var($1); free($1); }
-    | IDENT OP_atribuicao_soma expressao {
-        int novo = get_var($1) + $3;
-        set_var($1, novo);
-        $$ = novo;
-        free($1);
-    }
-    | IDENT OP_atribuicao_subtracao expressao {
-        int novo = get_var($1) - $3;
-        set_var($1, novo);
-        $$ = novo;
-        free($1);
-    }
-    | IDENT OP_atribuicao_potencia expressao {
-        int novo = (int) pow(get_var($1), $3);
-        set_var($1, novo);
-        $$ = novo;
-        free($1);
-    }
-    | IDENT OP_atribuicao_multiplicacao expressao {
-        int novo = get_var($1) * $3;
-        set_var($1, novo);
-        $$ = novo;
-        free($1);
-    }
-    | IDENT OP_atribuicao_divisao expressao {
-        int novo = get_var($1) / $3;
-        set_var($1, novo);
-        $$ = novo;
-        free($1);
-    }
-    | IDENT OP_atribuicao_resto expressao {
-        int novo = get_var($1) % $3;
-        set_var($1, novo);
-        $$ = novo;
-        free($1);
-    }
+    NUMBER { $$ = ast_number($1); }
+    | IDENT  { $$ = ast_identifier($1); }
+    | IDENT OP_atribuicao_soma expressao { $$ = ast_assign(OP_atribuicao_soma, $1, $3); }
+    | IDENT OP_atribuicao_subtracao expressao { $$ = ast_assign(OP_atribuicao_subtracao, $1, $3); }
+    | IDENT OP_atribuicao_potencia expressao { $$ = ast_assign(OP_atribuicao_potencia, $1, $3); }
+    | IDENT OP_atribuicao_multiplicacao expressao { $$ = ast_assign(OP_atribuicao_multiplicacao, $1, $3); }
+    | IDENT OP_atribuicao_divisao expressao { $$ = ast_assign(OP_atribuicao_divisao, $1, $3); }
+    | IDENT OP_atribuicao_resto expressao { $$ = ast_assign(OP_atribuicao_resto, $1, $3); }
 
-    | expressao OP_AND expressao { $$ = ($1 && $3); }
-    | expressao OP_OR expressao { $$ = ($1 || $3); }
-    | expressao OP_Igualdade expressao { $$ = ($1 == $3); }
-    | expressao OP_Diferente expressao { $$ = ($1 != $3); }
-    | expressao '+' expressao { $$ = $1 + $3; }
-    | expressao '*' expressao { $$ = $1 * $3; }
-    | expressao '-' expressao { $$ = $1 - $3; }
-    | expressao '>' expressao { $$ = ($1 > $3); }
-    | expressao '<' expressao { $$ = ($1 < $3); }
-    | expressao '/' expressao { 
-        if ($3 == 0) {
-            printf("Erro: Divisao por zero!\n");
-            $$ = 0; 
-        } else {
-            $$ = $1 / $3; 
-        }
-    }
-    | '!' expressao { $$ = !$2; }
+    | expressao OP_AND expressao { $$ = ast_binary(OP_AND, $1, $3); }
+    | expressao OP_OR expressao { $$ = ast_binary(OP_OR, $1, $3); }
+    | expressao OP_Igualdade expressao { $$ = ast_binary(OP_Igualdade, $1, $3); }
+    | expressao OP_Diferente expressao { $$ = ast_binary(OP_Diferente, $1, $3); }
+    | expressao '+' expressao { $$ = ast_binary('+', $1, $3); }
+    | expressao '*' expressao { $$ = ast_binary('*', $1, $3); }
+    | expressao '-' expressao { $$ = ast_binary('-', $1, $3); }
+    | expressao '>' expressao { $$ = ast_binary('>', $1, $3); }
+    | expressao '<' expressao { $$ = ast_binary('<', $1, $3); }
+    | expressao '/' expressao { $$ = ast_binary('/', $1, $3); }
+    | '!' expressao { $$ = ast_unary('!', $2); }
     ;
     
 
@@ -202,5 +135,11 @@ void yyerror(const char *s) {
 
 int main(void) {
     printf("Interpretador JS v0.1 iniciado.\nDigite suas expressões (ex: x + 10 == 20;)\n\n");
-    return yyparse();
+    if (yyparse() == 0 && raiz != NULL) {
+        ast_eval(raiz);
+        ast_free(raiz);
+        raiz = NULL;
+    }
+
+    return 0;
 }
