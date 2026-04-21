@@ -33,6 +33,10 @@
 "<"         { return '<'; }
 "||"        { return OP_OR; }
 "!"         { return '!'; }
+"("         { return '('; }
+")"         { return ')'; }
+
+
 
 
 [0-9]+      {

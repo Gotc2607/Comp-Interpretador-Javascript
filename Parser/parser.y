@@ -52,6 +52,8 @@ static ASTNode *raiz = NULL;
 %token '<'
 %token OP_Diferente
 %token '!'
+%token '(' ')'
+%token ';'
 
 %type <node> programa elementos elemento Linha Bloco lista_linhas expressao
 
@@ -70,6 +72,8 @@ static ASTNode *raiz = NULL;
 %left '+' '-'
 %left '*' '/'
 %right '!'
+%left '(' ')'
+
 
 
 %%
@@ -123,6 +127,7 @@ expressao:
     | expressao '<' expressao { $$ = ast_binary('<', $1, $3); }
     | expressao '/' expressao { $$ = ast_binary('/', $1, $3); }
     | '!' expressao { $$ = ast_unary('!', $2); }
+    | '(' expressao ')' { $$ = $2; }
     ;
     
 

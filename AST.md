@@ -7,7 +7,8 @@ Este projeto passou a usar uma AST basica entre o parser e a avaliacao.
 1. O Flex reconhece os tokens e preenche os valores de `NUMBER` e `IDENT`.
 2. O Bison monta a arvore sintatica abstrata em vez de calcular tudo diretamente nas regras.
 3. O modulo `Parser/ast.c` percorre a arvore, aplica a tabela de simbolos e imprime os resultados das linhas.
-4. Ao final da parse, a arvore inteira e liberada com `ast_free`.
+4. A avaliacao da AST acontece quando a entrada termina em EOF (em Linux, `Ctrl+D` no modo interativo).
+5. Ao final da parse, a arvore inteira e liberada com `ast_free`.
 
 ## Tipos de no
 

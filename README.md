@@ -31,6 +31,9 @@ gcc Lexer/lex.yy.c Parser/parser.tab.c Parser/ast.c -o interpretador -I ./Parser
 
 Depois de rodar `./interpretador`, digite expressoes como:
 
+Importante: os resultados sao exibidos apenas quando a entrada termina em EOF.
+No Linux, pressione `Ctrl+D` para finalizar a entrada e disparar a avaliacao da AST.
+
 ```txt
 2 + 3 * 4;
 2 + 3 == 5;
@@ -73,5 +76,6 @@ printf '2 + 3 * 4;\n2 + 3 == 5;\n2 * 3 == 6;\n' | ./interpretador
 ## Observacoes
 
 - Cada comando deve terminar com `;`.
+- A avaliacao acontece no fim da entrada (EOF), nao a cada linha digitada.
 - `IDENT` agora participa da AST e da tabela de simbolos durante a avaliacao.
 - Em caso de erro de sintaxe, o parser exibira mensagem de erro.
