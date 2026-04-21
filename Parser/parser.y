@@ -201,6 +201,5 @@ void yyerror(const char *s) {
 }
 
 int main(void) {
-    printf("Interpretador JS v0.1 iniciado.\nDigite suas expressões (ex: x + 10 == 20;)\n\n");
     return yyparse();
 }

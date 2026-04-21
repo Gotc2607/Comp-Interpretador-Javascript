@@ -1,0 +1,14 @@
+# Executáveis
+interpretador
+
+# Arquivos gerados pelo Flex e Bison
+Lexer/lex.yy.c
+Parser/parser.tab.c
+Parser/parser.tab.h
+
+# Arquivos de objetos (compilação C)
+*.o
+
+# Arquivos de cache do Python (Testes)
+__pycache__/
+.pytest_cache/

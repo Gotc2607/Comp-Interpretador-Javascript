@@ -68,3 +68,7 @@ printf '2 + 3 * 4;\n2 + 3 == 5;\n2 * 3 == 6;\n' | ./interpretador
 - Cada comando deve terminar com `;`.
 - `IDENT` ja e reconhecido no lexer, mas semantica de variaveis ainda nao foi implementada no parser.
 - Em caso de erro de sintaxe, o parser exibira mensagem de erro.
+
+## Infraestrutura e Testes
+- **Build:** Implementado arquivo `Makefile`. Utilize o comando `make` para compilar e `make clean` para limpar binarios gerados.
+- **Testes Automatizados:** Adicionada suite de testes em Python. Para executar, rode `python3 executar_testes.py`. O script processa os arquivos em `testes/*.js` e compara a saida com os arquivos `*.out` correspondentes.

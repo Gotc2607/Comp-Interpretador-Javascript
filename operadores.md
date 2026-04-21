@@ -605,3 +605,10 @@ Saidas esperadas (sem tabela de simbolos):
 - `2 + 3 * 4;` -> `14`
 - `2 + 3 == 5;` -> `1`
 - `2 * 3 == 6;` -> `1`
+
+
+## Execucao de Testes Automatizados
+Para testar a validade das operacoes:
+1. Crie o arquivo de entrada em `testes/nome.js`.
+2. Crie o arquivo com a saida esperada em `testes/nome.out`.
+3. Execute no terminal: `python3 executar_testes.py`.
