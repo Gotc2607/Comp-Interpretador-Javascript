@@ -13,6 +13,17 @@ typedef struct {
     int valor;
 } Variavel;
 
+typedef enum { TIPO_NUMBER, TIPO_STRING, TIPO_BOOLEAN, TIPO_NULL } Type;
+
+typedef struct {
+    Type tipo;
+    union {
+        double valor_numerico;
+        char* valor_string;
+        int valor_bool;
+    } dado;
+} JSObject;
+
 static Variavel tabela[MAX_VARS];
 static int qtd_vars = 0;
 
@@ -52,6 +63,31 @@ static void set_var(const char *nome, int valor) {
 int yylex(void);
 void yyerror(const char *s);
 
+int avaliar_igualdade_estrita(JSObject a, JSObject b) {
+    // 1. Verificação de Tipo: Se tipos diferentes, retorna Falso (0)
+    if (a.tipo != b.tipo) {
+        return 0; 
+    }
+
+    // 2. Verificação de Valor: Tipos são iguais, agora compara o conteúdo
+    switch (a.tipo) {
+        case TIPO_NUMBER:
+            return a.dado.valor_numerico == b.dado.valor_numerico;
+        
+        case TIPO_STRING:
+            return strcmp(a.dado.valor_string, b.dado.valor_string) == 0;
+        
+        case TIPO_BOOLEAN:
+            return a.dado.valor_bool == b.dado.valor_bool;
+            
+        case TIPO_NULL:
+            return 1; // null === null é sempre verdade
+
+        default:
+            return 0;
+    }
+}
+
 %}
 
 
@@ -88,6 +124,8 @@ void yyerror(const char *s);
 %token '<'
 %token OP_Diferente
 %token '!'
+%token OP_Igualdade_estrito
+%token OP_Diferente_estrito
 
 %type <ival> expressao
 
@@ -106,6 +144,7 @@ void yyerror(const char *s);
 %left '+' '-'
 %left '*' '/'
 %right '!'
+%left OP_Igualdade_estrito OP_Diferente_estrito
 
 
 %%
@@ -176,6 +215,8 @@ expressao:
     | expressao OP_OR expressao { $$ = ($1 || $3); }
     | expressao OP_Igualdade expressao { $$ = ($1 == $3); }
     | expressao OP_Diferente expressao { $$ = ($1 != $3); }
+    | expressao OP_Igualdade_estrito expressao { $$ = avaliar_igualdade_estrita((JSObject){.tipo=TIPO_NUMBER, .dado.valor_numerico=$1}, (JSObject){.tipo=TIPO_NUMBER, .dado.valor_numerico=$3}); }
+    | expressao OP_Diferente_estrito expressao { $$ = !avaliar_igualdade_estrita((JSObject){.tipo=TIPO_NUMBER, .dado.valor_numerico=$1}, (JSObject){.tipo=TIPO_NUMBER, .dado.valor_numerico=$3}); }
     | expressao '+' expressao { $$ = $1 + $3; }
     | expressao '*' expressao { $$ = $1 * $3; }
     | expressao '-' expressao { $$ = $1 - $3; }
@@ -194,7 +235,6 @@ expressao:
     
 
 %%
-
 
 void yyerror(const char *s) {
     fprintf(stderr, "Erro de sintaxe: %s\n", s);
