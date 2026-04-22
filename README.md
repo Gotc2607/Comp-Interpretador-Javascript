@@ -2,12 +2,19 @@
 
 Interpretador de JavaScript (versao de estudo) para a materia de Compiladores, usando Flex (lexer) e Bison (parser).
 
+## Arquitetura atual
+
+O fluxo foi reorganizado para usar uma AST basica entre o parser e a avaliacao. O Bison monta a arvore em vez de calcular tudo diretamente, e `Parser/ast.c` faz a interpretacao final, incluindo a tabela de simbolos.
+
+Se quiser ver o desenho da arquitetura, consulte [AST.md](AST.md).
+
 ## O que funciona atualmente
 
 - Numeros inteiros
 - Operadores: `+`, `*`, `==`
 - Precedencia: `*` > `+` > `==`
 - Leitura de multiplas expressoes finalizadas com `;`
+- AST basica com avaliacao posterior
 
 ## Comandos para build e execucao
 
@@ -16,13 +23,16 @@ Execute na raiz do projeto:
 ```bash
 bison -d Parser/parser.y -o Parser/parser.tab.c
 flex -o Lexer/lex.yy.c Lexer/scanner.l
-gcc Lexer/lex.yy.c Parser/parser.tab.c -o interpretador -I ./Parser -lfl
+gcc Lexer/lex.yy.c Parser/parser.tab.c Parser/ast.c -o interpretador -I ./Parser -lfl -lm
 ./interpretador
 ```
 
 ## Teste rapido (entrada manual)
 
 Depois de rodar `./interpretador`, digite expressoes como:
+
+Importante: os resultados sao exibidos apenas quando a entrada termina em EOF.
+No Linux, pressione `Ctrl+D` para finalizar a entrada e disparar a avaliacao da AST.
 
 ```txt
 2 + 3 * 4;
@@ -66,7 +76,8 @@ printf '2 + 3 * 4;\n2 + 3 == 5;\n2 * 3 == 6;\n' | ./interpretador
 ## Observacoes
 
 - Cada comando deve terminar com `;`.
-- `IDENT` ja e reconhecido no lexer, mas semantica de variaveis ainda nao foi implementada no parser.
+- A avaliacao acontece no fim da entrada (EOF), nao a cada linha digitada.
+- `IDENT` agora participa da AST e da tabela de simbolos durante a avaliacao.
 - Em caso de erro de sintaxe, o parser exibira mensagem de erro.
 
 ## Infraestrutura e Testes

@@ -5,7 +5,8 @@ Este guia mostra, passo a passo, como adicionar novos operadores no interpretado
 Estrutura considerada:
 
 - `Lexer/scanner.l` (analise lexica)
-- `Parser/parser.y` (analise sintatica + acoes semanticas)
+- `Parser/parser.y` (analise sintatica + construcao da AST)
+- `Parser/ast.c` e `Parser/ast.h` (avaliacao, simbolos e memoria)
 
 ---
 
@@ -13,8 +14,9 @@ Estrutura considerada:
 
 1. O **Flex** reconhece um simbolo (ex.: `*`) e retorna um token para o parser.
 2. O **Bison** declara esse token e define em quais regras ele aparece.
-3. O **Bison** recebe e combina valores semanticos via `%union`, `yylval`, `$$`, `$1`, `$3`.
-4. A precedencia (`%left`, `%right`) evita conflitos de **Shift/Reduce** e define a hierarquia de operadores.
+3. O **Bison** recebe os valores e monta a AST com `%union`, `yylval`, `$$`, `$1`, `$3`.
+4. O modulo de AST avalia a arvore, atualiza variaveis e imprime os resultados.
+5. A precedencia (`%left`, `%right`) evita conflitos de **Shift/Reduce** e define a hierarquia de operadores.
 
 ---
 
@@ -136,7 +138,7 @@ As diretivas `%left`/`%right` (na ordem correta) resolvem isso e garantem a hier
 ## Parte 2: Semantica (Acao)
 
 Objetivo desta parte: agora que a validacao sintatica funciona, adicionar significado aos operadores.
-Aqui voce vai carregar valores no lexer e calcular no parser.
+Aqui voce vai carregar valores no lexer e construir a AST no parser.
 
 ## 2.1 Definir `%union` no Bison
 
@@ -214,33 +216,33 @@ No `scanner.l`, inclua `stdlib.h` e preencha `yylval` antes de `return`.
 Observacao importante:
 - Se usar `strdup`, depois libere memoria no parser (ou na tabela de simbolos), para evitar vazamento.
 
-## 2.3 Calculo no Bison com `$$`, `$1`, `$3`
+## 2.3 Construcao da AST no Bison com `$$`, `$1`, `$3`
 
-Agora sim entra a semantica da regra de `expressao`.
-Depois da validacao, adicione as acoes para produzir resultado:
+Agora entra a semantica da regra de `expressao` como construcao de nos.
+Depois da validacao, adicione as acoes para produzir arvore:
 
 Em acoes semanticas:
 
-- `$1` = valor do primeiro simbolo da regra
-- `$3` = valor do terceiro simbolo
-- `$$` = valor produzido pela regra inteira
+- `$1` = no do primeiro simbolo da regra
+- `$3` = no do terceiro simbolo
+- `$$` = no produzido pela regra inteira
 
 Exemplo:
 
 ```bison
 expressao:
       NUMBER
-        { $$ = $1; }
+        { $$ = ast_number($1); }
     | expressao '+' expressao
-        { $$ = $1 + $3; }
+        { $$ = ast_binary('+', $1, $3); }
     | expressao '*' expressao
-        { $$ = $1 * $3; }
+        { $$ = ast_binary('*', $1, $3); }
     | expressao OP_Igualdade expressao
-        { $$ = ($1 == $3); }
+        { $$ = ast_binary(OP_Igualdade, $1, $3); }
     ;
 ```
 
-- Em igualdade, o resultado vira `1` (verdadeiro) ou `0` (falso).
+- Em igualdade, o resultado vira `1` (verdadeiro) ou `0` (falso) quando a AST for avaliada.
 
 ## 2.4 Operadores com estado (ex.: `+=`, `-=`, `=`)
 
@@ -255,7 +257,7 @@ Para esse tipo de operador, alem de `%union` e `yylval`, voce precisa de uma tab
 - Permite ler o valor atual (`get_var`).
 - Permite atualizar/criar valor (`set_var`).
 
-Sem isso, `IDENT += expressao` nao tem como funcionar, porque o parser nao sabe onde guardar o novo valor da variavel.
+Sem isso, `IDENT += expressao` nao tem como funcionar, porque a AST precisa de um lugar para guardar o novo valor da variavel durante a avaliacao.
 
 ### Fluxo semantico de `x += 5`
 
