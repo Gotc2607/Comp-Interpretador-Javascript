@@ -31,7 +31,8 @@
 "%"         { return '%'; }
 "<="        { return OP_Menor_igual; }
 ">="        { return OP_Maior_igual; }
-
+"if"        { return CO_IF; }
+"else"      { return CO_ELSE; }
 [0-9]+      {
     yylval.ival = atoi(yytext);
     return NUMBER;

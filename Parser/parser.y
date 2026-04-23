@@ -8,6 +8,12 @@
 #define MAX_VARS 256
 
 typedef struct {
+    no* condicao;
+    no* bloco_if;
+    no* bloco_else;
+} Ifno;
+
+typedef struct {
     char nome[64];
     int valor;
 } Variavel;
@@ -167,6 +173,11 @@ expressao:
         }
     $$ = resultado;
 }
+    | CO_IF '(' expressao ')' '{' expressao '}' { 
+        if($3 == 1){
+            expressao;
+        }
+    }
     ;
     
 
