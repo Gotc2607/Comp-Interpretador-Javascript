@@ -35,6 +35,13 @@
 "!"         { return '!'; }
 "("         { return '('; }
 ")"         { return ')'; }
+"%"         { return '%'; }
+"++"        { return OP_Incremento; }
+"--"        { return OP_Decremento; }
+"**"        { return OP_Potencia; }
+"<="        { return OP_MenorIgual; }
+">="        { return OP_MaiorIgual; }
+"="         { return '='; }
 
 
 

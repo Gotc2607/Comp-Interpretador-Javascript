@@ -186,6 +186,7 @@ int ast_eval(ASTNode *node) {
         return 0;
     }
 
+
     switch (node->kind) {
         case AST_SEQUENCE:
             left = ast_eval(node->left);
@@ -231,8 +232,20 @@ int ast_eval(ASTNode *node) {
                     return left + right;
                 case '*':
                     return left * right;
+                case '%':
+                 if (right == 0) {
+                  printf("Erro: Divisao por zero!\n");
+                  return 0;
+                }
+                    return left % right;
+                case OP_Potencia:
+                    return (int)pow(left, right);
                 case '-':
                     return left - right;
+                case OP_MaiorIgual:
+                    return left >= right;
+                case OP_MenorIgual:
+                    return left <= right;
                 case '>':
                     return left > right;
                 case '<':
@@ -248,11 +261,18 @@ int ast_eval(ASTNode *node) {
             }
 
         case AST_UNARY:
-            return !ast_eval(node->left);
+
+            switch (node->op) {
+                case OP_Decremento:
+                    return get_var(node->left->text) - 1;
+                case OP_Incremento:
+                    return get_var(node->left->text) + 1;
+                default:
+                        return !ast_eval(node->left);
     }
 
     return 0;
-}
+}}
 
 void ast_free(ASTNode *node) {
     if (!node) {
