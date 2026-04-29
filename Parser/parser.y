@@ -1,15 +1,7 @@
 %{
 /* Prologo C: includes e declaracoes auxiliares. */
 
-#include <stdio.h>
-#include <stdlib.h>
-
-#include "ast.h"
-
-int yylex(void);
-void yyerror(const char *s);
-
-static ASTNode *raiz = NULL;
+#include "parser_bib.h"
 
 %}
 
@@ -132,11 +124,6 @@ expressao:
     
 
 %%
-
-
-void yyerror(const char *s) {
-    fprintf(stderr, "Erro de sintaxe: %s\n", s);
-}
 
 int main(void) {
     if (yyparse() == 0 && raiz != NULL) {
