@@ -178,14 +178,13 @@ static int eval_assign(ASTNode *node, int value) {
     return novo;
 }
 
-int ast_eval(ASTNode *node) {
-    int left;
-    int right;
+RuntimeValue ast_eval(ASTNode *node) {
+    RuntimeValue result = {VAL_INT, 0};
+    RuntimeValue left, right;
 
     if (!node) {
-        return 0;
+        return result;
     }
-
 
     switch (node->kind) {
         case AST_SEQUENCE:
@@ -200,20 +199,24 @@ int ast_eval(ASTNode *node) {
 
         case AST_PRINT:
             left = ast_eval(node->left);
-            printf("Resultado: %d\n", left);
+            printf("Resultado: %d\n", left.ival);
             return left;
 
         case AST_BLOCK:
             return ast_eval(node->left);
 
         case AST_NUMBER:
-            return node->value;
+            result.ival = node->value;
+            return result;
 
         case AST_IDENTIFIER:
-            return get_var(node->text);
+            result.ival = get_var(node->text);
+            return result;
 
         case AST_ASSIGN:
-            return eval_assign(node, ast_eval(node->left));
+            left = ast_eval(node->left);
+            result.ival = eval_assign(node, left.ival);
+            return result;
 
         case AST_BINARY:
             left = ast_eval(node->left);
@@ -221,58 +224,85 @@ int ast_eval(ASTNode *node) {
 
             switch (node->op) {
                 case OP_AND:
-                    return left && right;
+                    result.ival = left.ival && right.ival;
+                    return result;
                 case OP_OR:
-                    return left || right;
+                    result.ival = left.ival || right.ival;
+                    return result;
                 case OP_Igualdade:
-                    return left == right;
+                    result.ival = left.ival == right.ival;
+                    return result;
                 case OP_Diferente:
-                    return left != right;
+                    result.ival = left.ival != right.ival;
+                    return result;
                 case '+':
-                    return left + right;
+                    result.ival = left.ival + right.ival;
+                    return result;
                 case '*':
-                    return left * right;
+                    result.ival = left.ival * right.ival;
+                    return result;
                 case '%':
-                 if (right == 0) {
-                  printf("Erro: Divisao por zero!\n");
-                  return 0;
-                }
-                    return left % right;
-                case OP_Potencia:
-                    return (int)pow(left, right);
-                case '-':
-                    return left - right;
-                case OP_MaiorIgual:
-                    return left >= right;
-                case OP_MenorIgual:
-                    return left <= right;
-                case '>':
-                    return left > right;
-                case '<':
-                    return left < right;
-                case '/':
-                    if (right == 0) {
+                    if (right.ival == 0) {
                         printf("Erro: Divisao por zero!\n");
-                        return 0;
+                        result.ival = 0;
+                        return result;
                     }
-                    return left / right;
+                    result.ival = left.ival % right.ival;
+                    return result;
+                case OP_Potencia:
+                    result.ival = (int)pow(left.ival, right.ival);
+                    return result;
+                case '-':
+                    result.ival = left.ival - right.ival;
+                    return result;
+                case OP_MaiorIgual:
+                    result.ival = left.ival >= right.ival;
+                    return result;
+                case OP_MenorIgual:
+                    result.ival = left.ival <= right.ival;
+                    return result;
+                case '>':
+                    result.ival = left.ival > right.ival;
+                    return result;
+                case '<':
+                    result.ival = left.ival < right.ival;
+                    return result;
+                case '/':
+                    if (right.ival == 0) {
+                        printf("Erro: Divisao por zero!\n");
+                        result.ival = 0;
+                        return result;
+                    }
+                    result.ival = left.ival / right.ival;
+                    return result;
+                case OP_IgualdadeEstrita:
+                    if (left.type != right.type) {
+                        result.ival = 0;
+                        return result;
+                    }
+                    result.ival = left.ival == right.ival;
+                    return result;
                 default:
-                    return 0;
+                    return result;
             }
 
         case AST_UNARY:
-
             switch (node->op) {
                 case OP_Decremento:
-                    return get_var(node->left->text) - 1;
+                    result.ival = get_var(node->left->text) - 1;
+                    return result;
                 case OP_Incremento:
-                    return get_var(node->left->text) + 1;
+                    result.ival = get_var(node->left->text) + 1;
+                    return result;
                 default:
-                        return !ast_eval(node->left);
+                    left = ast_eval(node->left);
+                    result.ival = !left.ival;
+                    return result;
+            }
     }
 
-    return 0;
-}}
+    return result;
+}
 
 void ast_free(ASTNode *node) {
     if (!node) {

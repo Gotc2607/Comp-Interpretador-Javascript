@@ -61,6 +61,7 @@ static ASTNode *raiz = NULL;
 %token OP_MaiorIgual
 %token OP_MenorIgual
 %token '%'
+%token OP_IgualdadeEstrita
 
 %type <node> programa elementos elemento Linha Bloco lista_linhas expressao
 
@@ -74,7 +75,7 @@ static ASTNode *raiz = NULL;
 %right OP_atribuicao_resto
 %left OP_OR
 %left OP_AND
-%left OP_Igualdade OP_Diferente
+%left OP_Igualdade OP_Diferente OP_IgualdadeEstrita
 %left '<' '>' OP_MaiorIgual OP_MenorIgual
 %left '+' '-'
 %left '*' '/'
@@ -142,6 +143,7 @@ expressao:
     | expressao '/' expressao { $$ = ast_binary('/', $1, $3); }
     | '!' expressao { $$ = ast_unary('!', $2); }
     | '(' expressao ')' { $$ = $2; }
+    | expressao OP_IgualdadeEstrita expressao { $$ = ast_binary(OP_IgualdadeEstrita, $1, $3); }
     ;
     
 

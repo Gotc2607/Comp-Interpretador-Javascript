@@ -1,3 +1,5 @@
+%option nounput
+%option noinput
 %{
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,6 +15,7 @@
 %%
 
 
+"==="       { return OP_IgualdadeEstrita; }
 "=="        { return OP_Igualdade; }
 "!="        { return OP_Diferente; }
 "+="        { return OP_atribuicao_soma; }
