@@ -5,8 +5,8 @@ CFLAGS = -Wall -I./Parser -I./AST
 
 all: interpretador
 
-interpretador: Lexer/lex.yy.c Parser/parser.tab.c Parser/ast.c
-	$(CC) $(CFLAGS) Lexer/lex.yy.c Parser/parser.tab.c Parser/ast.c -o interpretador -lfl -lm
+interpretador: Lexer/lex.yy.c Parser/parser.tab.c Parser/ast.c Parser/symboltable.c
+	$(CC) $(CFLAGS) Lexer/lex.yy.c Parser/parser.tab.c Parser/ast.c Parser/symboltable.c -o interpretador -lfl -lm
 
 Lexer/lex.yy.c: Lexer/scanner.l
 	$(FLEX) -o Lexer/lex.yy.c Lexer/scanner.l

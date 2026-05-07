@@ -1,9 +1,9 @@
 #include "ast.h"
-
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "symboltable.h"
 
 #include "parser.tab.h"
 
@@ -18,51 +18,7 @@ struct ASTNode {
     ASTNode *right;
 };
 
-typedef struct {
-    char nome[64];
-    int valor;
-} Variavel;
 
-static Variavel tabela[MAX_VARS];
-static int qtd_vars = 0;
-
-static int find_var(const char *nome) {
-    int i;
-
-    for (i = 0; i < qtd_vars; i++) {
-        if (strcmp(tabela[i].nome, nome) == 0) {
-            return i;
-        }
-    }
-
-    return -1;
-}
-
-static int get_var(const char *nome) {
-    int idx = find_var(nome);
-
-    if (idx >= 0) {
-        return tabela[idx].valor;
-    }
-
-    return 0;
-}
-
-static void set_var(const char *nome, int valor) {
-    int idx = find_var(nome);
-
-    if (idx >= 0) {
-        tabela[idx].valor = valor;
-        return;
-    }
-
-    if (qtd_vars < MAX_VARS) {
-        strncpy(tabela[qtd_vars].nome, nome, sizeof(tabela[qtd_vars].nome) - 1);
-        tabela[qtd_vars].nome[sizeof(tabela[qtd_vars].nome) - 1] = '\0';
-        tabela[qtd_vars].valor = valor;
-        qtd_vars++;
-    }
-}
 
 static ASTNode *ast_new(ASTKind kind) {
     ASTNode *node = (ASTNode *)calloc(1, sizeof(ASTNode));
@@ -139,7 +95,7 @@ ASTNode *ast_unary(int op, ASTNode *child) {
 }
 
 static int eval_assign(ASTNode *node, int value) {
-    int atual = get_var(node->text);
+    int atual = sym_get_int(node->text);
     int novo;
 
     switch (node->op) {
@@ -174,7 +130,7 @@ static int eval_assign(ASTNode *node, int value) {
             break;
     }
 
-    set_var(node->text, novo);
+    sym_set_int(node->text, novo);
     return novo;
 }
 
@@ -204,13 +160,16 @@ int ast_eval(ASTNode *node) {
             return left;
 
         case AST_BLOCK:
-            return ast_eval(node->left);
+            scope_push();                    
+            left = ast_eval(node->left);
+            scope_pop();                     
+            return left;
 
         case AST_NUMBER:
             return node->value;
 
         case AST_IDENTIFIER:
-            return get_var(node->text);
+            return sym_get_int(node->text);
 
         case AST_ASSIGN:
             return eval_assign(node, ast_eval(node->left));
@@ -264,9 +223,9 @@ int ast_eval(ASTNode *node) {
 
             switch (node->op) {
                 case OP_Decremento:
-                    return get_var(node->left->text) - 1;
+                    return sym_get_int(node->left->text) - 1;
                 case OP_Incremento:
-                    return get_var(node->left->text) + 1;
+                    return sym_get_int(node->left->text) + 1;
                 default:
                         return !ast_eval(node->left);
     }
