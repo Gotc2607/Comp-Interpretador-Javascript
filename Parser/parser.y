@@ -54,6 +54,13 @@ static ASTNode *raiz = NULL;
 %token '!'
 %token '(' ')'
 %token ';'
+%token '='
+%token OP_Potencia
+%token OP_Incremento
+%token OP_Decremento
+%token OP_MaiorIgual
+%token OP_MenorIgual
+%token '%'
 
 %type <node> programa elementos elemento Linha Bloco lista_linhas expressao
 
@@ -68,7 +75,7 @@ static ASTNode *raiz = NULL;
 %left OP_OR
 %left OP_AND
 %left OP_Igualdade OP_Diferente
-%left '<' '>'
+%left '<' '>' OP_MaiorIgual OP_MenorIgual
 %left '+' '-'
 %left '*' '/'
 %right '!'
@@ -115,6 +122,9 @@ expressao:
     | IDENT OP_atribuicao_multiplicacao expressao { $$ = ast_assign(OP_atribuicao_multiplicacao, $1, $3); }
     | IDENT OP_atribuicao_divisao expressao { $$ = ast_assign(OP_atribuicao_divisao, $1, $3); }
     | IDENT OP_atribuicao_resto expressao { $$ = ast_assign(OP_atribuicao_resto, $1, $3); }
+    | IDENT '=' expressao { $$ = ast_assign('=',$1,$3);}
+    | IDENT OP_Incremento { $$ = ast_unary(OP_Incremento,ast_identifier($1));}
+    | IDENT OP_Decremento { $$ = ast_unary(OP_Decremento,ast_identifier($1));}
 
     | expressao OP_AND expressao { $$ = ast_binary(OP_AND, $1, $3); }
     | expressao OP_OR expressao { $$ = ast_binary(OP_OR, $1, $3); }
@@ -122,8 +132,12 @@ expressao:
     | expressao OP_Diferente expressao { $$ = ast_binary(OP_Diferente, $1, $3); }
     | expressao '+' expressao { $$ = ast_binary('+', $1, $3); }
     | expressao '*' expressao { $$ = ast_binary('*', $1, $3); }
+    | expressao OP_Potencia expressao { $$ = ast_binary(OP_Potencia, $1, $3); }
+    | expressao '%' expressao { $$ = ast_binary('%', $1, $3); }
     | expressao '-' expressao { $$ = ast_binary('-', $1, $3); }
     | expressao '>' expressao { $$ = ast_binary('>', $1, $3); }
+    | expressao OP_MaiorIgual expressao { $$ = ast_binary(OP_MaiorIgual,$1,$3);}
+    | expressao OP_MenorIgual expressao { $$ = ast_binary(OP_MenorIgual,$1,$3);}
     | expressao '<' expressao { $$ = ast_binary('<', $1, $3); }
     | expressao '/' expressao { $$ = ast_binary('/', $1, $3); }
     | '!' expressao { $$ = ast_unary('!', $2); }

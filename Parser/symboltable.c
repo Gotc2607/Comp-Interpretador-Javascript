@@ -1,0 +1,150 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "symboltable.h"
+
+static unsigned int hash(const char *str) {
+    unsigned int h = 5381;
+    while (*str)
+        h = ((h << 5) + h) + (unsigned char)(*str++); 
+    // funçao hash: h * 33 + c
+    return h % HASH_SIZE;
+}
+
+static Scope global_scope = { .buckets = {NULL}, .parent = NULL };
+static Scope *current = &global_scope;
+
+
+static Symbol *find_symbol(const char *name) {
+    unsigned int idx = hash(name);
+    Scope *scope = current;
+
+    while (scope) {
+        Symbol *s = scope->buckets[idx];
+        while (s) {
+            if (strcmp(s->name, name) == 0)
+                return s;
+            s = s->next;
+        }
+        scope = scope->parent;
+    }
+    return NULL;
+}
+
+static Symbol *find_in_current(const char *name) {
+    unsigned int idx = hash(name);
+    Symbol *s = current->buckets[idx];
+    while (s) {
+        if (strcmp(s->name, name) == 0)
+            return s;
+        s = s->next;
+    }
+    return NULL;
+}
+
+
+static Symbol *create_symbol(const char *name) {
+    Symbol *s = calloc(1, sizeof(Symbol));
+    strncpy(s->name, name, sizeof(s->name) - 1);
+
+    unsigned int idx = hash(name);
+    s->next = current->buckets[idx];   // insere no início da lista
+    current->buckets[idx] = s;
+
+    return s;
+}
+
+
+void scope_push() {
+    Scope *novo = calloc(1, sizeof(Scope));
+    novo->parent = current;
+    current = novo;
+}
+
+void scope_pop() {
+    if (!current->parent) {
+        fprintf(stderr, "Erro: tentou sair do escopo global\n");
+        return;
+    }
+
+ 
+    for (int i = 0; i < HASH_SIZE; i++) {
+        Symbol *s = current->buckets[i];
+        while (s) {
+            Symbol *next = s->next;
+            if (s->type == SYM_STRING && s->sval)
+                free(s->sval);
+            free(s);
+            s = next;
+        }
+    }
+
+    Scope *old = current;
+    current = current->parent;
+    free(old);
+}
+
+
+void sym_set_int(const char *name, int value) {
+    // Se existe em qualquer escopo, atualiza lá
+    Symbol *s = find_symbol(name);
+    if (s) {
+        s->type = SYM_INT;
+        s->ival = value;
+        return;
+    }
+    // Senão cria no escopo atual
+    s = create_symbol(name);
+    s->type = SYM_INT;
+    s->ival = value;
+}
+
+int sym_get_int(const char *name) {
+    Symbol *s = find_symbol(name);
+    if (s && s->type == SYM_INT)
+        return s->ival;
+    return 0;
+}
+
+
+
+void sym_set_str(const char *name, char *value) {
+    Symbol *s = find_symbol(name);
+    if (!s) s = create_symbol(name);
+    if (s->sval) free(s->sval);
+    s->type = SYM_STRING;
+    s->sval = strdup(value);
+}
+
+char *sym_get_str(const char *name) {
+    Symbol *s = find_symbol(name);
+    if (s && s->type == SYM_STRING)
+        return s->sval;
+    return "";
+}
+
+
+void sym_set_func(const char *name, ASTNode *body) {
+    Symbol *s = find_in_current(name);
+    if (!s) s = create_symbol(name);
+    s->type      = SYM_FUNCTION;
+    s->func_body = body;
+}
+
+ASTNode *sym_get_func(const char *name) {
+    Symbol *s = find_symbol(name);
+    if (s && s->type == SYM_FUNCTION)
+        return s->func_body;
+    return NULL;
+}
+
+
+int sym_exists(const char *name) {
+    return find_symbol(name) != NULL;
+}
+
+SymbolType sym_get_type(const char *name) {
+    Symbol *s = find_symbol(name);
+    if (s) return s->type;
+    return SYM_INT;
+}
