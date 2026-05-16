@@ -32,6 +32,17 @@
 "{"         { return '{'; }
 "}"         { return '}'; }
 "-"	        { return '-'; }
+
+\"[^\"\n]*\" {
+    yylval.sval = (char *)malloc((size_t)yyleng - 1);
+    if (!yylval.sval) {
+        fprintf(stderr, "Erro: memoria insuficiente ao ler string.\n");
+        exit(EXIT_FAILURE);
+    }
+    memcpy(yylval.sval, yytext + 1, (size_t)yyleng - 2);
+    yylval.sval[yyleng - 2] = '\0';
+    return STRING;
+}
 ">"         { return '>'; }
 "<"         { return '<'; }
 "||"        { return OP_OR; }

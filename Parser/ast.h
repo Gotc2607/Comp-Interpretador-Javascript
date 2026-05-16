@@ -8,6 +8,7 @@ typedef enum {
     AST_PRINT,
     AST_BLOCK,
     AST_NUMBER,
+    AST_STRING,
     AST_IDENTIFIER,
     AST_ASSIGN,
     AST_BINARY,
@@ -24,12 +25,14 @@ typedef enum {
 typedef struct {
     ValueType type;
     int ival; // Para simplificar, pode usar int para bool também
+    char *sval;
 } RuntimeValue;
 
 ASTNode *ast_sequence(ASTNode *left, ASTNode *right);
 ASTNode *ast_print_stmt(ASTNode *expression);
 ASTNode *ast_block(ASTNode *body);
 ASTNode *ast_number(int value);
+ASTNode *ast_string(char *value);
 ASTNode *ast_identifier(char *name);
 ASTNode *ast_assign(int op, char *name, ASTNode *expression);
 ASTNode *ast_binary(int op, ASTNode *left, ASTNode *right);

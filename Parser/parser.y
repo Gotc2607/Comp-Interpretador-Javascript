@@ -33,6 +33,7 @@ static ASTNode *raiz = NULL;
  */
 
 %token <ival> NUMBER
+%token <sval> STRING
 %token <sval> IDENT
 %token OP_Igualdade
 %token OP_OR
@@ -116,6 +117,7 @@ lista_linhas:
 /* A AST representa expressoes, atribuicoes e operacoes logicas. */
 expressao:
     NUMBER { $$ = ast_number($1); }
+    | STRING { $$ = ast_string($1); }
     | IDENT  { $$ = ast_identifier($1); }
     | IDENT OP_atribuicao_soma expressao { $$ = ast_assign(OP_atribuicao_soma, $1, $3); }
     | IDENT OP_atribuicao_subtracao expressao { $$ = ast_assign(OP_atribuicao_subtracao, $1, $3); }

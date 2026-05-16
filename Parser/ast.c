@@ -65,6 +65,12 @@ ASTNode *ast_number(int value) {
     return node;
 }
 
+ASTNode *ast_string(char *value) {
+    ASTNode *node = ast_new(AST_STRING);
+    node->text = value;
+    return node;
+}
+
 ASTNode *ast_identifier(char *name) {
     ASTNode *node = ast_new(AST_IDENTIFIER);
     node->text = name;
@@ -94,44 +100,62 @@ ASTNode *ast_unary(int op, ASTNode *child) {
     return node;
 }
 
-static int eval_assign(ASTNode *node, int value) {
+static RuntimeValue eval_assign(ASTNode *node, RuntimeValue value) {
+    RuntimeValue result = value;
     int atual = sym_get_int(node->text);
     int novo;
 
+    if (value.type == VAL_STRING) {
+        if (node->op != '=') {
+            printf("Erro: atribuicao composta nao suporta string.\n");
+            result.type = VAL_NULL;
+            result.sval = NULL;
+            return result;
+        }
+
+        sym_set_str(node->text, value.sval ? value.sval : "");
+        return result;
+    }
+
     switch (node->op) {
         case OP_atribuicao_soma:
-            novo = atual + value;
+            novo = atual + value.ival;
             break;
         case OP_atribuicao_subtracao:
-            novo = atual - value;
+            novo = atual - value.ival;
             break;
         case OP_atribuicao_potencia:
-            novo = (int)pow(atual, value);
+            novo = (int)pow(atual, value.ival);
             break;
         case OP_atribuicao_multiplicacao:
-            novo = atual * value;
+            novo = atual * value.ival;
             break;
         case OP_atribuicao_divisao:
-            if (value == 0) {
+            if (value.ival == 0) {
                 printf("Erro: Divisao por zero!\n");
-                return 0;
+                result.type = VAL_NULL;
+                result.sval = NULL;
+                return result;
             }
-            novo = atual / value;
+            novo = atual / value.ival;
             break;
         case OP_atribuicao_resto:
-            if (value == 0) {
+            if (value.ival == 0) {
                 printf("Erro: Divisao por zero!\n");
-                return 0;
+                result.type = VAL_NULL;
+                result.sval = NULL;
+                return result;
             }
-            novo = atual % value;
+            novo = atual % value.ival;
             break;
         default:
-            novo = value;
+            novo = value.ival;
             break;
     }
 
     sym_set_int(node->text, novo);
-    return novo;
+    result.ival = novo;
+    return result;
 }
 
 RuntimeValue ast_eval(ASTNode *node) {
@@ -155,7 +179,11 @@ RuntimeValue ast_eval(ASTNode *node) {
 
         case AST_PRINT:
             left = ast_eval(node->left);
-            printf("Resultado: %d\n", left.ival);
+            if (left.type == VAL_STRING) {
+                printf("Resultado: %s\n", left.sval ? left.sval : "");
+            } else {
+                printf("Resultado: %d\n", left.ival);
+            }
             return left;
 
         case AST_BLOCK:
@@ -168,13 +196,24 @@ RuntimeValue ast_eval(ASTNode *node) {
             result.ival = node->value;
             return result;
 
+        case AST_STRING:
+            result.type = VAL_STRING;
+            result.sval = node->text;
+            return result;
+
         case AST_IDENTIFIER:
-            result.ival = get_var(node->text);
+            if (sym_get_type(node->text) == SYM_STRING) {
+                result.type = VAL_STRING;
+                result.sval = sym_get_str(node->text);
+                return result;
+            }
+
+            result.ival = sym_get_int(node->text);
             return result;
 
         case AST_ASSIGN:
             left = ast_eval(node->left);
-            result.ival = eval_assign(node, left.ival);
+            result = eval_assign(node, left);
             return result;
 
         case AST_BINARY:
@@ -189,9 +228,17 @@ RuntimeValue ast_eval(ASTNode *node) {
                     result.ival = left.ival || right.ival;
                     return result;
                 case OP_Igualdade:
+                    if (left.type == VAL_STRING && right.type == VAL_STRING) {
+                        result.ival = strcmp(left.sval ? left.sval : "", right.sval ? right.sval : "") == 0;
+                        return result;
+                    }
                     result.ival = left.ival == right.ival;
                     return result;
                 case OP_Diferente:
+                    if (left.type == VAL_STRING && right.type == VAL_STRING) {
+                        result.ival = strcmp(left.sval ? left.sval : "", right.sval ? right.sval : "") != 0;
+                        return result;
+                    }
                     result.ival = left.ival != right.ival;
                     return result;
                 case '+':
@@ -239,6 +286,12 @@ RuntimeValue ast_eval(ASTNode *node) {
                         result.ival = 0;
                         return result;
                     }
+
+                    if (left.type == VAL_STRING) {
+                        result.ival = strcmp(left.sval ? left.sval : "", right.sval ? right.sval : "") == 0;
+                        return result;
+                    }
+
                     result.ival = left.ival == right.ival;
                     return result;
                 default:
@@ -248,10 +301,10 @@ RuntimeValue ast_eval(ASTNode *node) {
         case AST_UNARY:
             switch (node->op) {
                 case OP_Decremento:
-                    result.ival = get_var(node->left->text) - 1;
+                    result.ival = sym_get_int(node->left->text) - 1;
                     return result;
                 case OP_Incremento:
-                    result.ival = get_var(node->left->text) + 1;
+                    result.ival = sym_get_int(node->left->text) + 1;
                     return result;
                 default:
                     left = ast_eval(node->left);
@@ -310,6 +363,10 @@ void ast_dump(const ASTNode *node, int indent) {
 
         case AST_NUMBER:
             printf("NUMBER(%d)\n", node->value);
+            break;
+
+        case AST_STRING:
+            printf("STRING(%s)\n", node->text);
             break;
 
         case AST_IDENTIFIER:
