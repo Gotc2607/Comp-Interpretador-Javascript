@@ -33,6 +33,7 @@ static ASTNode *raiz = NULL;
  */
 
 %token <ival> NUMBER
+%token <sval> STRING
 %token <sval> IDENT
 %token OP_Igualdade
 %token OP_OR
@@ -61,6 +62,7 @@ static ASTNode *raiz = NULL;
 %token OP_MaiorIgual
 %token OP_MenorIgual
 %token '%'
+%token OP_IgualdadeEstrita
 
 %type <node> programa elementos elemento Linha Bloco lista_linhas expressao
 
@@ -74,7 +76,7 @@ static ASTNode *raiz = NULL;
 %right OP_atribuicao_resto
 %left OP_OR
 %left OP_AND
-%left OP_Igualdade OP_Diferente
+%left OP_Igualdade OP_Diferente OP_IgualdadeEstrita
 %left '<' '>' OP_MaiorIgual OP_MenorIgual
 %left '+' '-'
 %left '*' '/'
@@ -115,6 +117,7 @@ lista_linhas:
 /* A AST representa expressoes, atribuicoes e operacoes logicas. */
 expressao:
     NUMBER { $$ = ast_number($1); }
+    | STRING { $$ = ast_string($1); }
     | IDENT  { $$ = ast_identifier($1); }
     | IDENT OP_atribuicao_soma expressao { $$ = ast_assign(OP_atribuicao_soma, $1, $3); }
     | IDENT OP_atribuicao_subtracao expressao { $$ = ast_assign(OP_atribuicao_subtracao, $1, $3); }
@@ -142,6 +145,7 @@ expressao:
     | expressao '/' expressao { $$ = ast_binary('/', $1, $3); }
     | '!' expressao { $$ = ast_unary('!', $2); }
     | '(' expressao ')' { $$ = $2; }
+    | expressao OP_IgualdadeEstrita expressao { $$ = ast_binary(OP_IgualdadeEstrita, $1, $3); }
     ;
     
 
