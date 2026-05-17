@@ -13,7 +13,8 @@ typedef enum {
     AST_ASSIGN,
     AST_BINARY,
     AST_UNARY,
-    AST_WHILE
+    AST_WHILE,
+    AST_DO_WHILE
 } ASTKind;
 
 typedef enum {
@@ -39,6 +40,7 @@ ASTNode *ast_assign(int op, char *name, ASTNode *expression);
 ASTNode *ast_binary(int op, ASTNode *left, ASTNode *right);
 ASTNode *ast_unary(int op, ASTNode *child);
 ASTNode *ast_while(ASTNode *cond, ASTNode *body);
+ASTNode *ast_do_while(ASTNode *cond, ASTNode *body);
 
 RuntimeValue ast_eval(ASTNode *node);
 void ast_free(ASTNode *node);

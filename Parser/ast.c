@@ -105,6 +105,13 @@ ASTNode *ast_while(ASTNode *cond, ASTNode *body) {
     return node;
 }
 
+ASTNode *ast_do_while(ASTNode *cond, ASTNode *body) {
+    ASTNode *node = ast_new(AST_DO_WHILE);
+    node->left = cond;
+    node->right = body;
+    return node;
+}
+
 static RuntimeValue eval_assign(ASTNode *node, RuntimeValue value) {
     RuntimeValue result = value;
     int atual = sym_get_int(node->text);
@@ -212,6 +219,25 @@ RuntimeValue ast_eval(ASTNode *node) {
 
                 last_val = ast_eval(node->right);
             }
+            return last_val;
+        }
+
+        case AST_DO_WHILE: {
+            RuntimeValue cond_val;
+            RuntimeValue last_val = {VAL_NULL, 0, NULL};
+
+            do {
+                last_val = ast_eval(node->right);
+
+                cond_val = ast_eval(node->left);
+                
+                int is_true = 0;
+                if (cond_val.type == VAL_INT && cond_val.ival != 0) is_true = 1;
+                else if (cond_val.type == VAL_STRING && cond_val.sval && strlen(cond_val.sval) > 0) is_true = 1;
+
+                if (!is_true) break;
+
+            } while (1);
             return last_val;
         }
 
@@ -386,6 +412,12 @@ void ast_dump(const ASTNode *node, int indent) {
 
         case AST_WHILE:
             puts("WHILE");
+            ast_dump(node->left, indent + 2);
+            ast_dump(node->right, indent + 2);
+            break;
+
+        case AST_DO_WHILE:
+            puts("DO_WHILE");
             ast_dump(node->left, indent + 2);
             ast_dump(node->right, indent + 2);
             break;

@@ -7,13 +7,7 @@
 #include "../Parser/parser.tab.h"
 %}
 
-/*
- * Etapa semantica (conforme operadores.md):
- * - Reconhece operadores e simbolos.
- * - Preenche yylval para NUMBER/IDENT.
- */
 %%
-
 
 "==="       { return OP_IgualdadeEstrita; }
 "=="        { return OP_Igualdade; }
@@ -57,8 +51,7 @@
 ">="        { return OP_MaiorIgual; }
 "="         { return '='; }
 "while"     { return WHILE; }
-
-
+"do"        { return DO; }
 
 [0-9]+      {
     yylval.ival = atoi(yytext);
@@ -70,13 +63,12 @@
     return IDENT;
 }
 
-[ \t\n]+    { /* ignora espacos */ }
+[ \t\n]+    {  }
 
 .           { printf("Caractere desconhecido: %s\n", yytext); }
 
 %%
 
-/* Fim do arquivo de entrada. */
 int yywrap(void) {
     return 1;
 }
