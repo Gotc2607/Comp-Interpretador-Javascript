@@ -12,7 +12,8 @@ typedef enum {
     AST_IDENTIFIER,
     AST_ASSIGN,
     AST_BINARY,
-    AST_UNARY
+    AST_UNARY,
+    AST_WHILE
 } ASTKind;
 
 typedef enum {
@@ -24,7 +25,7 @@ typedef enum {
 
 typedef struct {
     ValueType type;
-    int ival; // Para simplificar, pode usar int para bool também
+    int ival;
     char *sval;
 } RuntimeValue;
 
@@ -37,6 +38,7 @@ ASTNode *ast_identifier(char *name);
 ASTNode *ast_assign(int op, char *name, ASTNode *expression);
 ASTNode *ast_binary(int op, ASTNode *left, ASTNode *right);
 ASTNode *ast_unary(int op, ASTNode *child);
+ASTNode *ast_while(ASTNode *cond, ASTNode *body);
 
 RuntimeValue ast_eval(ASTNode *node);
 void ast_free(ASTNode *node);
