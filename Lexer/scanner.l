@@ -56,7 +56,7 @@
 "<="        { return OP_MenorIgual; }
 ">="        { return OP_MaiorIgual; }
 "="         { return '='; }
-
+"while"     { return WHILE; }
 
 
 

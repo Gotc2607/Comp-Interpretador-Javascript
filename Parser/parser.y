@@ -63,6 +63,7 @@ static ASTNode *raiz = NULL;
 %token OP_MenorIgual
 %token '%'
 %token OP_IgualdadeEstrita
+%token WHILE
 
 %type <node> programa elementos elemento Linha Bloco lista_linhas expressao
 
@@ -99,6 +100,7 @@ elementos:
 elemento:
     Linha
     | Bloco
+    | WHILE '(' expressao ')' elemento { $$ = ast_while($3, $5); }
 ;
 
 Linha:
