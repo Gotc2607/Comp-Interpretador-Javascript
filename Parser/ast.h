@@ -16,7 +16,9 @@ typedef enum {
     AST_WHILE,
     AST_DO_WHILE,
     AST_ARRAY_ACCESS,
-    AST_ARRAY_ASSIGN
+    AST_ARRAY_ASSIGN,
+    AST_SWITCH,
+    AST_CASE_BLOCK
 } ASTKind;
 
 typedef enum {
@@ -45,6 +47,8 @@ ASTNode *ast_while(ASTNode *cond, ASTNode *body);
 ASTNode *ast_do_while(ASTNode *cond, ASTNode *body);
 ASTNode *ast_array_access(ASTNode *array, ASTNode *index);
 ASTNode *ast_array_assign(ASTNode *array_access, ASTNode *expression);
+ASTNode *ast_switch(ASTNode *control_expr, ASTNode *cases_list);
+ASTNode *ast_case_block(ASTNode *case_expr, ASTNode *body);
 
 RuntimeValue ast_eval(ASTNode *node);
 void ast_free(ASTNode *node);

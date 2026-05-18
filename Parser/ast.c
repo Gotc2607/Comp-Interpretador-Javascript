@@ -127,6 +127,20 @@ ASTNode *ast_array_assign(ASTNode *array_access, ASTNode *expression) {
     return node;
 }
 
+ASTNode *ast_switch(ASTNode *control_expr, ASTNode *cases_list) {
+    ASTNode *node = ast_new(AST_SWITCH);
+    node->left = control_expr;
+    node->right = cases_list;
+    return node;
+}
+
+ASTNode *ast_case_block(ASTNode *case_expr, ASTNode *body) {
+    ASTNode *node = ast_new(AST_CASE_BLOCK);
+    node->left = case_expr; // Se for NULL, é o default
+    node->right = body;
+    return node;
+}
+
 static RuntimeValue eval_assign(ASTNode *node, RuntimeValue value) {
     RuntimeValue result = value;
 
@@ -238,9 +252,7 @@ RuntimeValue ast_eval(ASTNode *node) {
             return left;
 
         case AST_BLOCK:
-            scope_push();                    
             left = ast_eval(node->left);
-            scope_pop();                     
             return left;
 
         case AST_WHILE: {
@@ -380,6 +392,49 @@ RuntimeValue ast_eval(ASTNode *node) {
                 default:
                     return result;
             }
+
+        case AST_SWITCH: {
+            RuntimeValue valor_controle = ast_eval(node->left);
+            
+            ASTNode *case_atual = node->right; // Lista encadeada por AST_SEQUENCE
+            ASTNode *no_default = NULL;
+            int match_encontrado = 0;
+            RuntimeValue last_val = {VAL_NULL, 0, NULL};
+
+            while (case_atual) {
+                ASTNode *bloco = case_atual;
+                
+                if (case_atual->kind == AST_SEQUENCE) {
+                    bloco = case_atual->right;
+                    case_atual = case_atual->left; // Avança na lista encadeada reversa
+                } else {
+                    case_atual = NULL; // Fim da lista
+                }
+
+                if (bloco && bloco->kind == AST_CASE_BLOCK) {
+                    if (bloco->left == NULL) {
+                        no_default = bloco->right;
+                        continue;
+                    }
+
+                    RuntimeValue valor_case = ast_eval(bloco->left);
+
+                    if (valor_controle.type == valor_case.type && valor_controle.ival == valor_case.ival) {
+                        match_encontrado = 1;
+                        if (bloco->right) {
+                            last_val = ast_eval(bloco->right); // Executa o código interno do case
+                        }
+                        break;
+                    }
+                }
+            }
+
+            if (!match_encontrado && no_default) {
+                last_val = ast_eval(no_default);
+            }
+
+            return last_val;
+        }
 
         case AST_UNARY:
             switch (node->op) {

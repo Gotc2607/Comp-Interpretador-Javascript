@@ -57,6 +57,10 @@
 "??="       { return OP_atribuicao_nullish; }
 "["         { return '['; }
 "]"         { return ']'; }
+"switch"    { return SWITCH; }
+"case"      { return CASE; }
+"default"   { return DEFAULT; }
+":"         { return ':'; }
 
 [0-9]+      {
     yylval.ival = atoi(yytext);
