@@ -52,6 +52,7 @@ static ASTNode *raiz = NULL;
 %token OP_MenorIgual
 %token '%'
 %token OP_IgualdadeEstrita
+%token OP_DiferenteEstrita
 %token WHILE
 %token DO
 %token OP_atribuicao_nullish
@@ -68,7 +69,7 @@ static ASTNode *raiz = NULL;
 %right OP_atribuicao_resto
 %left OP_OR
 %left OP_AND
-%left OP_Igualdade OP_Diferente OP_IgualdadeEstrita
+%left OP_Igualdade OP_Diferente OP_IgualdadeEstrita OP_DiferenteEstrita
 %left '<' '>' OP_MaiorIgual OP_MenorIgual
 %left '+' '-'
 %left '*' '/'
@@ -139,6 +140,7 @@ expressao:
     | '!' expressao { $$ = ast_unary('!', $2); }
     | '(' expressao ')' { $$ = $2; }
     | expressao OP_IgualdadeEstrita expressao { $$ = ast_binary(OP_IgualdadeEstrita, $1, $3); }
+    | expressao OP_DiferenteEstrita expressao { $$ = ast_binary(OP_DiferenteEstrita, $1, $3); }
     | expressao '[' expressao ']' '=' expressao { 
           ASTNode *acesso = ast_array_access($1, $3);
           $$ = ast_array_assign(acesso, $6); 

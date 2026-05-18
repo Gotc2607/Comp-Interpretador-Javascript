@@ -11,6 +11,7 @@
 
 "==="       { return OP_IgualdadeEstrita; }
 "=="        { return OP_Igualdade; }
+"!=="       { return OP_DiferenteEstrita; }
 "!="        { return OP_Diferente; }
 "+="        { return OP_atribuicao_soma; }
 "-="        { return OP_atribuicao_subtracao; }

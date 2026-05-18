@@ -8,6 +8,8 @@
 
 #define MAX_VARS 256
 
+static int verificar_igualdade_estrita(RuntimeValue left, RuntimeValue right);
+
 struct ASTNode {
     ASTKind kind;
     int op;
@@ -368,17 +370,12 @@ RuntimeValue ast_eval(ASTNode *node) {
                     result.ival = left.ival / right.ival;
                     return result;
                 case OP_IgualdadeEstrita:
-                    if (left.type != right.type) {
-                        result.ival = 0;
-                        return result;
-                    }
+                    result.ival = verificar_igualdade_estrita(left, right);
+                    return result;
 
-                    if (left.type == VAL_STRING) {
-                        result.ival = strcmp(left.sval ? left.sval : "", right.sval ? right.sval : "") == 0;
-                        return result;
-                    }
-
-                    result.ival = left.ival == right.ival;
+                case OP_DiferenteEstrita:
+                    // A desigualdade estrita é o inverso (!) da igualdade estrita
+                    result.ival = !verificar_igualdade_estrita(left, right);
                     return result;
                 default:
                     return result;
@@ -467,6 +464,14 @@ static void print_indent(int indent) {
     for (i = 0; i < indent; i++) {
         putchar(' ');
     }
+}
+
+static int verificar_igualdade_estrita(RuntimeValue left, RuntimeValue right) {
+    if (left.type != right.type) return 0;
+    if (left.type == VAL_STRING) {
+        return strcmp(left.sval ? left.sval : "", right.sval ? right.sval : "") == 0;
+    }
+    return left.ival == right.ival;
 }
 
 void ast_dump(const ASTNode *node, int indent) {
