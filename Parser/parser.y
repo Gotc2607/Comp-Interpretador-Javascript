@@ -54,9 +54,11 @@ static ASTNode *raiz = NULL;
 %token OP_IgualdadeEstrita
 %token WHILE
 %token DO
+%token OP_atribuicao_nullish
 
 %type <node> programa elementos elemento Linha Bloco lista_linhas expressao
 
+%right OP_atribuicao_nullish
 %right OP_atribuicao_soma
 %right OP_atribuicao_subtracao
 %right OP_atribuicao_potencia
@@ -116,6 +118,7 @@ expressao:
     | IDENT '=' expressao { $$ = ast_assign('=',$1,$3);}
     | IDENT OP_Incremento { $$ = ast_unary(OP_Incremento,ast_identifier($1));}
     | IDENT OP_Decremento { $$ = ast_unary(OP_Decremento,ast_identifier($1));}
+    | IDENT OP_atribuicao_nullish expressao { $$ = ast_assign(OP_atribuicao_nullish, $1, $3); }
     | expressao OP_AND expressao { $$ = ast_binary(OP_AND, $1, $3); }
     | expressao OP_OR expressao { $$ = ast_binary(OP_OR, $1, $3); }
     | expressao OP_Igualdade expressao { $$ = ast_binary(OP_Igualdade, $1, $3); }

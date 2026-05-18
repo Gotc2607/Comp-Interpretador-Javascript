@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "symboltable.h"
-
 #include "parser.tab.h"
 
 #define MAX_VARS 256
@@ -114,6 +113,30 @@ ASTNode *ast_do_while(ASTNode *cond, ASTNode *body) {
 
 static RuntimeValue eval_assign(ASTNode *node, RuntimeValue value) {
     RuntimeValue result = value;
+
+    SymbolType tipo_atual = sym_get_type(node->text);
+
+    if (node->op == OP_atribuicao_nullish) {
+        if (sym_exists(node->text) && (tipo_atual == SYM_INT || tipo_atual == SYM_STRING)) { 
+            // Se o seu interpretador considerar que variáveis existentes com tipo válido não mudam:
+            if (tipo_atual == SYM_STRING) {
+                result.type = VAL_STRING;
+                result.sval = sym_get_str(node->text);
+            } else {
+                result.type = VAL_INT;
+                result.ival = sym_get_int(node->text);
+            }
+            return result; 
+        }
+        
+        if (value.type == VAL_STRING) {
+            sym_set_str(node->text, value.sval ? value.sval : "");
+        } else {
+            sym_set_int(node->text, value.ival);
+        }
+        return result;
+    }
+
     int atual = sym_get_int(node->text);
     int novo;
 

@@ -19,6 +19,8 @@
 "/="        { return OP_atribuicao_divisao; }
 "%="        { return OP_atribuicao_resto; }
 "&&"        { return OP_AND; }
+"//"[^
+]*  { /* ignora comentario de linha */ }
 "+"         { return '+'; }
 "*"         { return '*'; }
 "/"         { return '/'; }  
@@ -52,6 +54,7 @@
 "="         { return '='; }
 "while"     { return WHILE; }
 "do"        { return DO; }
+"??="       { return OP_atribuicao_nullish; }
 
 [0-9]+      {
     yylval.ival = atoi(yytext);
