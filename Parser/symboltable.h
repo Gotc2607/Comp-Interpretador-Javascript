@@ -6,7 +6,8 @@ typedef struct ASTNode ASTNode;
 typedef enum {
     SYM_INT,
     SYM_STRING,
-    SYM_FUNCTION
+    SYM_FUNCTION,
+    SYM_ARRAY
 } SymbolType;
 
 #define HASH_SIZE 256
@@ -18,6 +19,8 @@ typedef struct Symbol {
     char       *sval;
     ASTNode    *func_body;
     struct Symbol *next;   
+    int        *arr_vals;
+    int         arr_size;
 } Symbol;
 
 typedef struct Scope {
@@ -40,6 +43,10 @@ char     *sym_get_str(const char *name);
 // Funções
 void      sym_set_func(const char *name, ASTNode *body);
 ASTNode  *sym_get_func(const char *name);
+
+// Arrays
+void      sym_set_array_element(const char *name, int index, int value);
+int       sym_get_array_element(const char *name, int index);
 
 // Utilitários
 int       sym_exists(const char *name);

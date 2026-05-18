@@ -111,6 +111,20 @@ ASTNode *ast_do_while(ASTNode *cond, ASTNode *body) {
     return node;
 }
 
+ASTNode *ast_array_access(ASTNode *array, ASTNode *index) {
+    ASTNode *node = ast_new(AST_ARRAY_ACCESS);
+    node->left = array;
+    node->right = index;
+    return node;
+}
+
+ASTNode *ast_array_assign(ASTNode *array_access, ASTNode *expression) {
+    ASTNode *node = ast_new(AST_ARRAY_ASSIGN);
+    node->left = array_access;
+    node->right = expression;
+    return node;
+}
+
 static RuntimeValue eval_assign(ASTNode *node, RuntimeValue value) {
     RuntimeValue result = value;
 
@@ -383,6 +397,54 @@ RuntimeValue ast_eval(ASTNode *node) {
                     result.ival = !left.ival;
                     return result;
             }
+        case AST_ARRAY_ACCESS: {            
+            if (node->left->kind != AST_IDENTIFIER) {
+                RuntimeValue left_val = ast_eval(node->left);
+                RuntimeValue right_val = ast_eval(node->right);
+                
+                if (left_val.type == VAL_STRING && right_val.type == VAL_INT) {
+                    int tam = strlen(left_val.sval ? left_val.sval : "");
+                    if (right_val.ival >= 0 && right_val.ival < tam) {
+                        char *caractere = (char *)malloc(2);
+                        caractere[0] = left_val.sval[right_val.ival];
+                        caractere[1] = '\0';
+                        result.type = VAL_STRING;
+                        result.sval = caractere;
+                        return result;
+                    }
+                }
+                printf("Erro: Operação inválida com colchetes.\n");
+                result.type = VAL_NULL;
+                return result;
+            }
+
+            char *nome_array = node->left->text;
+            right = ast_eval(node->right);
+
+            if (right.type != VAL_INT) {
+                printf("Erro: O índice do array precisa ser um número inteiro.\n");
+                result.type = VAL_NULL;
+                return result;
+            }
+
+            result.type = VAL_INT;
+            result.ival = sym_get_array_element(nome_array, right.ival);
+            return result;
+        }
+        // Lógica para executar a atribuição vinda de um nó customizado (ex: AST_ARRAY_ASSIGN)
+        case AST_ARRAY_ASSIGN: {
+            ASTNode *acesso = node->left;
+            char *nome_array = acesso->left->text;
+
+            RuntimeValue idx_val = ast_eval(acesso->right);   // Descobre a posição (ex: 0)
+            RuntimeValue expr_val = ast_eval(node->right);   // Descobre o valor (ex: 50)
+
+            if (idx_val.type == VAL_INT && expr_val.type == VAL_INT) {
+                sym_set_array_element(nome_array, idx_val.ival, expr_val.ival);
+            }
+
+            return expr_val; // Atribuições em JS retornam o próprio valor atribuído
+        }
     }
 
     return result;

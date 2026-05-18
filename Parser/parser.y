@@ -55,6 +55,7 @@ static ASTNode *raiz = NULL;
 %token WHILE
 %token DO
 %token OP_atribuicao_nullish
+%token '[' ']'
 
 %type <node> programa elementos elemento Linha Bloco lista_linhas expressao
 
@@ -73,6 +74,7 @@ static ASTNode *raiz = NULL;
 %left '*' '/'
 %right '!'
 %left '(' ')'
+%left '[' ']'
 
 %%
 
@@ -119,6 +121,7 @@ expressao:
     | IDENT OP_Incremento { $$ = ast_unary(OP_Incremento,ast_identifier($1));}
     | IDENT OP_Decremento { $$ = ast_unary(OP_Decremento,ast_identifier($1));}
     | IDENT OP_atribuicao_nullish expressao { $$ = ast_assign(OP_atribuicao_nullish, $1, $3); }
+    | expressao '[' expressao ']' { $$ = ast_array_access($1, $3); }
     | expressao OP_AND expressao { $$ = ast_binary(OP_AND, $1, $3); }
     | expressao OP_OR expressao { $$ = ast_binary(OP_OR, $1, $3); }
     | expressao OP_Igualdade expressao { $$ = ast_binary(OP_Igualdade, $1, $3); }
@@ -136,6 +139,10 @@ expressao:
     | '!' expressao { $$ = ast_unary('!', $2); }
     | '(' expressao ')' { $$ = $2; }
     | expressao OP_IgualdadeEstrita expressao { $$ = ast_binary(OP_IgualdadeEstrita, $1, $3); }
+    | expressao '[' expressao ']' '=' expressao { 
+          ASTNode *acesso = ast_array_access($1, $3);
+          $$ = ast_array_assign(acesso, $6); 
+      }
     ;
 
 %%

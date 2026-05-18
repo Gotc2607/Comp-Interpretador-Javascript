@@ -148,3 +148,31 @@ SymbolType sym_get_type(const char *name) {
     if (s) return s->type;
     return SYM_INT;
 }
+
+void sym_set_array_element(const char *name, int index, int value) {
+    Symbol *s = find_symbol(name); 
+    if (!s) {
+        s = create_symbol(name);
+        s->type = SYM_ARRAY;
+        s->arr_vals = NULL;
+        s->arr_size = 0;
+    }
+
+    if (index >= s->arr_size) {
+        int novo_tamanho = index + 1;
+        s->arr_vals = realloc(s->arr_vals, novo_tamanho * sizeof(int));
+        for (int i = s->arr_size; i < novo_tamanho; i++) {
+            s->arr_vals[i] = 0;
+        }
+        s->arr_size = novo_tamanho;
+    }
+    s->arr_vals[index] = value;
+}
+
+int sym_get_array_element(const char *name, int index) {
+    Symbol *s = find_symbol(name);
+    if (s && s->type == SYM_ARRAY && index >= 0 && index < s->arr_size) {
+        return s->arr_vals[index];
+    }
+    return 0;
+}

@@ -14,14 +14,16 @@ typedef enum {
     AST_BINARY,
     AST_UNARY,
     AST_WHILE,
-    AST_DO_WHILE
+    AST_DO_WHILE,
+    AST_ARRAY_ACCESS,
+    AST_ARRAY_ASSIGN
 } ASTKind;
 
 typedef enum {
     VAL_INT,
     VAL_BOOL,
     VAL_STRING,
-    VAL_NULL
+    VAL_NULL,
 } ValueType;
 
 typedef struct {
@@ -41,6 +43,8 @@ ASTNode *ast_binary(int op, ASTNode *left, ASTNode *right);
 ASTNode *ast_unary(int op, ASTNode *child);
 ASTNode *ast_while(ASTNode *cond, ASTNode *body);
 ASTNode *ast_do_while(ASTNode *cond, ASTNode *body);
+ASTNode *ast_array_access(ASTNode *array, ASTNode *index);
+ASTNode *ast_array_assign(ASTNode *array_access, ASTNode *expression);
 
 RuntimeValue ast_eval(ASTNode *node);
 void ast_free(ASTNode *node);
