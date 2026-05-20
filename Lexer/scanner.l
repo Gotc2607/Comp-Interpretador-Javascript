@@ -11,6 +11,7 @@
 
 "==="       { return OP_IgualdadeEstrita; }
 "=="        { return OP_Igualdade; }
+"!=="       { return OP_DiferenteEstrita; }
 "!="        { return OP_Diferente; }
 "+="        { return OP_atribuicao_soma; }
 "-="        { return OP_atribuicao_subtracao; }
@@ -19,6 +20,7 @@
 "/="        { return OP_atribuicao_divisao; }
 "%="        { return OP_atribuicao_resto; }
 "&&"        { return OP_AND; }
+"//"[^\n]*  { /* ignora comentario de linha */ }
 "+"         { return '+'; }
 "*"         { return '*'; }
 "/"         { return '/'; }  
@@ -52,6 +54,13 @@
 "="         { return '='; }
 "while"     { return WHILE; }
 "do"        { return DO; }
+"??="       { return OP_atribuicao_nullish; }
+"["         { return '['; }
+"]"         { return ']'; }
+"switch"    { return SWITCH; }
+"case"      { return CASE; }
+"default"   { return DEFAULT; }
+":"         { return ':'; }
 
 [0-9]+      {
     yylval.ival = atoi(yytext);
