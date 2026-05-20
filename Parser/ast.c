@@ -113,6 +113,28 @@ ASTNode *ast_do_while(ASTNode *cond, ASTNode *body) {
     return node;
 }
 
+/*
+ * ast_if — armazena 3 filhos em apenas 2 ponteiros:
+ *
+ *   node->left          = condição
+ *   node->right         = nó auxiliar (AST_SEQUENCE reutilizado como par)
+ *   node->right->left   = corpo do then
+ *   node->right->right  = corpo do else  (pode ser NULL)
+ *
+ * O else if vira automaticamente outro AST_IF em node->right->right.
+ */
+ASTNode *ast_if(ASTNode *cond, ASTNode *then_body, ASTNode *else_body) {
+    /* nó auxiliar para guardar then/else sem alterar a struct */
+    ASTNode *branches = ast_new(AST_SEQUENCE);
+    branches->left  = then_body;
+    branches->right = else_body;   /* NULL quando não há else */
+
+    ASTNode *node = ast_new(AST_IF);
+    node->left  = cond;
+    node->right = branches;
+    return node;
+}
+
 ASTNode *ast_array_access(ASTNode *array, ASTNode *index) {
     ASTNode *node = ast_new(AST_ARRAY_ACCESS);
     node->left = array;
@@ -223,6 +245,11 @@ static RuntimeValue eval_assign(ASTNode *node, RuntimeValue value) {
     return result;
 }
 
+/* Macro auxiliar: mesma lógica de "truthy" usada em while/do-while */
+#define IS_TRUTHY(v) \
+    (((v).type == VAL_INT && (v).ival != 0) || \
+     ((v).type == VAL_STRING && (v).sval && (v).sval[0] != '\0'))
+
 RuntimeValue ast_eval(ASTNode *node) {
     RuntimeValue result = {VAL_INT, 0};
     RuntimeValue left, right;
@@ -261,13 +288,7 @@ RuntimeValue ast_eval(ASTNode *node) {
 
             while (1) {
                 cond_val = ast_eval(node->left);
-                
-                int is_true = 0;
-                if (cond_val.type == VAL_INT && cond_val.ival != 0) is_true = 1;
-                else if (cond_val.type == VAL_STRING && cond_val.sval && strlen(cond_val.sval) > 0) is_true = 1;
-
-                if (!is_true) break;
-
+                if (!IS_TRUTHY(cond_val)) break;
                 last_val = ast_eval(node->right);
             }
             return last_val;
@@ -279,17 +300,23 @@ RuntimeValue ast_eval(ASTNode *node) {
 
             do {
                 last_val = ast_eval(node->right);
-
                 cond_val = ast_eval(node->left);
-                
-                int is_true = 0;
-                if (cond_val.type == VAL_INT && cond_val.ival != 0) is_true = 1;
-                else if (cond_val.type == VAL_STRING && cond_val.sval && strlen(cond_val.sval) > 0) is_true = 1;
-
-                if (!is_true) break;
-
+                if (!IS_TRUTHY(cond_val)) break;
             } while (1);
             return last_val;
+        }
+
+        case AST_IF: {       
+            RuntimeValue cond_val = ast_eval(node->left);
+
+            if (IS_TRUTHY(cond_val)) {
+                return ast_eval(node->right->left);   
+            } else if (node->right->right) {
+                return ast_eval(node->right->right);  
+            }
+
+            result.type = VAL_NULL;
+            return result;
         }
 
         case AST_NUMBER:
@@ -565,6 +592,21 @@ void ast_dump(const ASTNode *node, int indent) {
             puts("DO_WHILE");
             ast_dump(node->left, indent + 2);
             ast_dump(node->right, indent + 2);
+            break;
+
+        case AST_IF:
+            puts("IF");
+            print_indent(indent + 2);
+            puts("[condicao]");
+            ast_dump(node->left, indent + 4);
+            print_indent(indent + 2);
+            puts("[then]");
+            ast_dump(node->right->left, indent + 4);
+            if (node->right->right) {
+                print_indent(indent + 2);
+                puts("[else]");
+                ast_dump(node->right->right, indent + 4);
+            }
             break;
 
         case AST_NUMBER:

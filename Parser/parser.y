@@ -55,6 +55,8 @@ static ASTNode *raiz = NULL;
 %token OP_DiferenteEstrita
 %token WHILE
 %token DO
+%token IF
+%token ELSE
 %token OP_atribuicao_nullish
 %token '[' ']'
 %token SWITCH CASE DEFAULT ':'
@@ -78,6 +80,16 @@ static ASTNode *raiz = NULL;
 %left '(' ')'
 %left '[' ']'
 
+/*
+ * Resolve o conflito clássico "dangling else":
+ * sem isso, bison reclama de shift/reduce em:
+ *   if (a) if (b) X else Y
+ * A diretiva abaixo faz o else sempre grudar no if mais próximo,
+ * que é o comportamento correto do JavaScript.
+ */
+%nonassoc LOWER_THAN_ELSE
+%nonassoc ELSE
+
 %%
 
 programa:
@@ -92,9 +104,11 @@ elementos:
 elemento:
     Linha
     | Bloco
-    | WHILE '(' expressao ')' elemento { $$ = ast_while($3, $5); }
-    | DO Bloco WHILE '(' expressao ')' ';' { $$ = ast_do_while($5, $2); }
-    | SWITCH '(' expressao ')' '{' lista_cases '}' { $$ = ast_switch($3, $6); }
+    | WHILE '(' expressao ')' elemento                    { $$ = ast_while($3, $5); }
+    | DO Bloco WHILE '(' expressao ')' ';'                { $$ = ast_do_while($5, $2); }
+    | IF '(' expressao ')' elemento %prec LOWER_THAN_ELSE { $$ = ast_if($3, $5, NULL); }
+    | IF '(' expressao ')' elemento ELSE elemento         { $$ = ast_if($3, $5, $7); }
+    | SWITCH '(' expressao ')' '{' lista_cases '}'        { $$ = ast_switch($3, $6); }
 ;
 
 Linha:
