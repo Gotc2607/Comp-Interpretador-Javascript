@@ -54,6 +54,8 @@ static ASTNode *raiz = NULL;
 %token OP_IgualdadeEstrita
 %token WHILE
 %token DO
+%token IF    /* novo */
+%token ELSE  /* novo */
 
 %type <node> programa elementos elemento Linha Bloco lista_linhas expressao
 
@@ -72,6 +74,16 @@ static ASTNode *raiz = NULL;
 %right '!'
 %left '(' ')'
 
+/*
+ * Resolve o conflito clássico "dangling else":
+ * sem isso, bison reclama de shift/reduce em:
+ *   if (a) if (b) X else Y
+ * A diretiva abaixo faz o else sempre grudar no if mais próximo,
+ * que é o comportamento correto do JavaScript.
+ */
+%nonassoc LOWER_THAN_ELSE
+%nonassoc ELSE
+
 %%
 
 programa:
@@ -86,8 +98,10 @@ elementos:
 elemento:
     Linha
     | Bloco
-    | WHILE '(' expressao ')' elemento { $$ = ast_while($3, $5); }
-    | DO Bloco WHILE '(' expressao ')' ';' { $$ = ast_do_while($5, $2); }
+    | WHILE '(' expressao ')' elemento                   { $$ = ast_while($3, $5); }
+    | DO Bloco WHILE '(' expressao ')' ';'               { $$ = ast_do_while($5, $2); }
+    | IF '(' expressao ')' elemento %prec LOWER_THAN_ELSE { $$ = ast_if($3, $5, NULL); }
+    | IF '(' expressao ')' elemento ELSE elemento        { $$ = ast_if($3, $5, $7); }
 ;
 
 Linha:

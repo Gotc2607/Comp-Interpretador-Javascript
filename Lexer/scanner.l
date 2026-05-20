@@ -21,11 +21,11 @@
 "&&"        { return OP_AND; }
 "+"         { return '+'; }
 "*"         { return '*'; }
-"/"         { return '/'; }  
+"/"         { return '/'; }
 ";"         { return ';'; }
 "{"         { return '{'; }
 "}"         { return '}'; }
-"-"	        { return '-'; }
+"-"         { return '-'; }
 
 \"[^\"\n]*\" {
     yylval.sval = (char *)malloc((size_t)yyleng - 1);
@@ -37,6 +37,7 @@
     yylval.sval[yyleng - 2] = '\0';
     return STRING;
 }
+
 ">"         { return '>'; }
 "<"         { return '<'; }
 "||"        { return OP_OR; }
@@ -52,6 +53,8 @@
 "="         { return '='; }
 "while"     { return WHILE; }
 "do"        { return DO; }
+"if"        { return IF; }   
+"else"      { return ELSE; } 
 
 [0-9]+      {
     yylval.ival = atoi(yytext);
