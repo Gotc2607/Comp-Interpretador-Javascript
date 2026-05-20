@@ -27,6 +27,7 @@ static ASTNode *raiz = NULL;
 %token OP_Igualdade
 %token OP_OR
 %token OP_AND
+%token FOR
 %token '+'
 %token '*'
 %token '{' '}'
@@ -60,6 +61,7 @@ static ASTNode *raiz = NULL;
 %token SWITCH CASE DEFAULT ':'
 
 %type <node> programa elementos elemento Linha Bloco lista_linhas expressao lista_cases bloco_case
+%type <node> expressao_opt
 
 %right OP_atribuicao_nullish
 %right OP_atribuicao_soma
@@ -93,6 +95,7 @@ elemento:
     Linha
     | Bloco
     | WHILE '(' expressao ')' elemento { $$ = ast_while($3, $5); }
+    | FOR '(' expressao_opt ';' expressao_opt ';' expressao_opt ')' elemento { $$ = ast_for($3, $5, $7, $9); }
     | DO Bloco WHILE '(' expressao ')' ';' { $$ = ast_do_while($5, $2); }
     | SWITCH '(' expressao ')' '{' lista_cases '}' { $$ = ast_switch($3, $6); }
 ;
@@ -114,6 +117,11 @@ lista_cases:
       /* vazio */        { $$ = NULL; }
     | lista_cases bloco_case { $$ = ast_sequence($1, $2); } 
     ;
+
+expressao_opt:
+        /* vazio */ { $$ = NULL; }
+        | expressao { $$ = $1; }
+;
 
 bloco_case:
       CASE expressao ':' lista_linhas { $$ = ast_case_block($2, $4); }

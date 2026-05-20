@@ -53,6 +53,7 @@
 ">="        { return OP_MaiorIgual; }
 "="         { return '='; }
 "while"     { return WHILE; }
+"for"       { return FOR; }
 "do"        { return DO; }
 "??="       { return OP_atribuicao_nullish; }
 "["         { return '['; }
