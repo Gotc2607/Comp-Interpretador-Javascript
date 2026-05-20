@@ -52,13 +52,18 @@ static ASTNode *raiz = NULL;
 %token OP_MenorIgual
 %token '%'
 %token OP_IgualdadeEstrita
+%token OP_DiferenteEstrita
 %token WHILE
 %token DO
-%token IF    /* novo */
-%token ELSE  /* novo */
+%token IF
+%token ELSE
+%token OP_atribuicao_nullish
+%token '[' ']'
+%token SWITCH CASE DEFAULT ':'
 
-%type <node> programa elementos elemento Linha Bloco lista_linhas expressao
+%type <node> programa elementos elemento Linha Bloco lista_linhas expressao lista_cases bloco_case
 
+%right OP_atribuicao_nullish
 %right OP_atribuicao_soma
 %right OP_atribuicao_subtracao
 %right OP_atribuicao_potencia
@@ -67,12 +72,13 @@ static ASTNode *raiz = NULL;
 %right OP_atribuicao_resto
 %left OP_OR
 %left OP_AND
-%left OP_Igualdade OP_Diferente OP_IgualdadeEstrita
+%left OP_Igualdade OP_Diferente OP_IgualdadeEstrita OP_DiferenteEstrita
 %left '<' '>' OP_MaiorIgual OP_MenorIgual
 %left '+' '-'
 %left '*' '/'
 %right '!'
 %left '(' ')'
+%left '[' ']'
 
 /*
  * Resolve o conflito clássico "dangling else":
@@ -98,10 +104,11 @@ elementos:
 elemento:
     Linha
     | Bloco
-    | WHILE '(' expressao ')' elemento                   { $$ = ast_while($3, $5); }
-    | DO Bloco WHILE '(' expressao ')' ';'               { $$ = ast_do_while($5, $2); }
+    | WHILE '(' expressao ')' elemento                    { $$ = ast_while($3, $5); }
+    | DO Bloco WHILE '(' expressao ')' ';'                { $$ = ast_do_while($5, $2); }
     | IF '(' expressao ')' elemento %prec LOWER_THAN_ELSE { $$ = ast_if($3, $5, NULL); }
-    | IF '(' expressao ')' elemento ELSE elemento        { $$ = ast_if($3, $5, $7); }
+    | IF '(' expressao ')' elemento ELSE elemento         { $$ = ast_if($3, $5, $7); }
+    | SWITCH '(' expressao ')' '{' lista_cases '}'        { $$ = ast_switch($3, $6); }
 ;
 
 Linha:
@@ -117,6 +124,16 @@ lista_linhas:
     | lista_linhas elemento { $$ = ast_sequence($1, $2); }
 ;
 
+lista_cases:
+      /* vazio */        { $$ = NULL; }
+    | lista_cases bloco_case { $$ = ast_sequence($1, $2); } 
+    ;
+
+bloco_case:
+      CASE expressao ':' lista_linhas { $$ = ast_case_block($2, $4); }
+    | DEFAULT ':' lista_linhas        { $$ = ast_case_block(NULL, $3); }
+    ;
+
 expressao:
     NUMBER { $$ = ast_number($1); }
     | STRING { $$ = ast_string($1); }
@@ -130,6 +147,8 @@ expressao:
     | IDENT '=' expressao { $$ = ast_assign('=',$1,$3);}
     | IDENT OP_Incremento { $$ = ast_unary(OP_Incremento,ast_identifier($1));}
     | IDENT OP_Decremento { $$ = ast_unary(OP_Decremento,ast_identifier($1));}
+    | IDENT OP_atribuicao_nullish expressao { $$ = ast_assign(OP_atribuicao_nullish, $1, $3); }
+    | expressao '[' expressao ']' { $$ = ast_array_access($1, $3); }
     | expressao OP_AND expressao { $$ = ast_binary(OP_AND, $1, $3); }
     | expressao OP_OR expressao { $$ = ast_binary(OP_OR, $1, $3); }
     | expressao OP_Igualdade expressao { $$ = ast_binary(OP_Igualdade, $1, $3); }
@@ -147,6 +166,11 @@ expressao:
     | '!' expressao { $$ = ast_unary('!', $2); }
     | '(' expressao ')' { $$ = $2; }
     | expressao OP_IgualdadeEstrita expressao { $$ = ast_binary(OP_IgualdadeEstrita, $1, $3); }
+    | expressao OP_DiferenteEstrita expressao { $$ = ast_binary(OP_DiferenteEstrita, $1, $3); }
+    | expressao '[' expressao ']' '=' expressao { 
+          ASTNode *acesso = ast_array_access($1, $3);
+          $$ = ast_array_assign(acesso, $6); 
+      }
     ;
 
 %%
