@@ -19,7 +19,8 @@ typedef enum {
     AST_ARRAY_ACCESS,
     AST_ARRAY_ASSIGN,
     AST_SWITCH,
-    AST_CASE_BLOCK
+    AST_CASE_BLOCK,
+    AST_FOR
 } ASTKind;
 
 typedef enum {
@@ -51,6 +52,7 @@ ASTNode *ast_array_access(ASTNode *array, ASTNode *index);
 ASTNode *ast_array_assign(ASTNode *array_access, ASTNode *expression);
 ASTNode *ast_switch(ASTNode *control_expr, ASTNode *cases_list);
 ASTNode *ast_case_block(ASTNode *case_expr, ASTNode *body);
+ASTNode *ast_for(ASTNode *init, ASTNode *cond, ASTNode *update, ASTNode *body);
 
 RuntimeValue ast_eval(ASTNode *node);
 void ast_free(ASTNode *node);

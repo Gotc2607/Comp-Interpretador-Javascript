@@ -54,6 +54,7 @@
 ">="        { return OP_MaiorIgual; }
 "="         { return '='; }
 "while"     { return WHILE; }
+"for"       { return FOR; }
 "do"        { return DO; }
 "if"        { return IF; }
 "else"      { return ELSE; }
