@@ -7,7 +7,6 @@ static unsigned int hash(const char *str) {
     unsigned int h = 5381;
     while (*str)
         h = ((h << 5) + h) + (unsigned char)(*str++); 
-    // funçao hash: h * 33 + c
     return h % HASH_SIZE;
 }
 
@@ -67,7 +66,6 @@ void scope_pop() {
         return;
     }
 
- 
     for (int i = 0; i < HASH_SIZE; i++) {
         Symbol *s = current->buckets[i];
         while (s) {
@@ -84,17 +82,33 @@ void scope_pop() {
     free(old);
 }
 
+void sym_declare(const char *name, int is_const) {
+    // let e const não permitem declarar a mesma variável duas vezes no mesmo bloco
+    Symbol *s = find_in_current(name);
+    if (s) {
+        printf("Erro de Sintaxe: Identificador '%s' ja foi declarado neste escopo.\n", name);
+        return;
+    }
+    
+    s = create_symbol(name);
+    s->is_const = is_const;
+}
 
 void sym_set_int(const char *name, int value) {
-    // Se existe em qualquer escopo, atualiza lá
     Symbol *s = find_symbol(name);
     if (s) {
+        // TRAVA DO CONST 
+        if (s->is_const) {
+            printf("TypeError: Atribuicao a variavel constante '%s'.\n", name);
+            return;
+        }
         s->type = SYM_INT;
         s->ival = value;
         return;
     }
     // Senão cria no escopo atual
     s = create_symbol(name);
+    s->is_const = 0;
     s->type = SYM_INT;
     s->ival = value;
 }
@@ -106,11 +120,19 @@ int sym_get_int(const char *name) {
     return 0;
 }
 
-
-
 void sym_set_str(const char *name, char *value) {
     Symbol *s = find_symbol(name);
-    if (!s) s = create_symbol(name);
+    if (s) {
+        // TRAVA DO CONST 
+        if (s->is_const) {
+            printf("TypeError: Atribuicao a variavel constante '%s'.\n", name);
+            return;
+        }
+    } else {
+        s = create_symbol(name);
+        s->is_const = 0;
+    }
+    
     if (s->sval) free(s->sval);
     s->type = SYM_STRING;
     s->sval = strdup(value);
