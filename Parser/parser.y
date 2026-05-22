@@ -54,10 +54,8 @@ static ASTNode *raiz = NULL;
 %token '%'
 %token OP_IgualdadeEstrita
 %token OP_DiferenteEstrita
-%token WHILE
-%token DO
-%token IF
-%token ELSE
+%token WHILE DO IF ELSE
+%token LET CONST VAR
 %token OP_atribuicao_nullish
 %token '[' ']'
 %token SWITCH CASE DEFAULT ':'
@@ -82,13 +80,6 @@ static ASTNode *raiz = NULL;
 %left '(' ')'
 %left '[' ']'
 
-/*
- * Resolve o conflito clássico "dangling else":
- * sem isso, bison reclama de shift/reduce em:
- *   if (a) if (b) X else Y
- * A diretiva abaixo faz o else sempre grudar no if mais próximo,
- * que é o comportamento correto do JavaScript.
- */
 %nonassoc LOWER_THAN_ELSE
 %nonassoc ELSE
 
@@ -113,7 +104,10 @@ elemento:
 ;
 
 Linha:
-    expressao ';' { $$ = ast_print_stmt($1); }
+      expressao ';' { $$ = ast_print_stmt($1); }
+    | LET IDENT '=' expressao ';'   { $$ = ast_declare(0, $2, $4); }
+    | CONST IDENT '=' expressao ';' { $$ = ast_declare(1, $2, $4); }
+    | VAR IDENT '=' expressao ';'   { $$ = ast_declare(0, $2, $4); }
 ;
 
 Bloco:
