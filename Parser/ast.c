@@ -152,6 +152,14 @@ ASTNode *ast_case_block(ASTNode *case_expr, ASTNode *body) {
     return node;
 }
 
+ASTNode *ast_declare(int is_const, char *name, ASTNode *expression) {
+    ASTNode *node = ast_new(AST_DECLARE);
+    node->op = is_const; // Usamos o 'op' para guardar se é const (1) ou let/var (0)
+    node->text = name;
+    node->left = expression;
+    return node;
+}
+
 static RuntimeValue eval_assign(ASTNode *node, RuntimeValue value) {
     RuntimeValue result = value;
 
@@ -446,7 +454,6 @@ RuntimeValue ast_eval(ASTNode *node) {
                     return result;
 
                 case OP_DiferenteEstrita:
-                    // A desigualdade estrita é o inverso (!) da igualdade estrita
                     result.ival = !verificar_igualdade_estrita(left, right);
                     return result;
                 default:
@@ -543,7 +550,6 @@ RuntimeValue ast_eval(ASTNode *node) {
             result.ival = sym_get_array_element(nome_array, right.ival);
             return result;
         }
-        // Lógica para executar a atribuição vinda de um nó customizado (ex: AST_ARRAY_ASSIGN)
         case AST_ARRAY_ASSIGN: {
             ASTNode *acesso = node->left;
             char *nome_array = acesso->left->text;
@@ -556,6 +562,21 @@ RuntimeValue ast_eval(ASTNode *node) {
             }
 
             return expr_val; // Atribuições em JS retornam o próprio valor atribuído
+        }
+
+        case AST_DECLARE: {
+            RuntimeValue val = ast_eval(node->left);
+            
+            // 1. Reserva o nome na memória e marca se é const
+            sym_declare(node->text, node->op);
+            
+            // 2. Salva o valor inicial
+            if (val.type == VAL_STRING) {
+                sym_set_str(node->text, val.sval ? val.sval : "");
+            } else {
+                sym_set_int(node->text, val.ival);
+            }
+            return val;
         }
     }
 
@@ -682,6 +703,11 @@ void ast_dump(const ASTNode *node, int indent) {
 
         case AST_UNARY:
             printf("UNARY(%d)\n", node->op);
+            ast_dump(node->left, indent + 2);
+            break;
+            
+        case AST_DECLARE:
+            printf("DECLARE(%s, is_const=%d)\n", node->text, node->op);
             ast_dump(node->left, indent + 2);
             break;
     }
