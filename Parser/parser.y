@@ -101,6 +101,8 @@ elemento:
     | FOR '(' expressao_opt ';' expressao_opt ';' expressao_opt ')' elemento { $$ = ast_for($3, $5, $7, $9); }
     | DO Bloco WHILE '(' expressao ')' ';' { $$ = ast_do_while($5, $2); }
     | SWITCH '(' expressao ')' '{' lista_cases '}' { $$ = ast_switch($3, $6); }
+    | IF '(' expressao ')' elemento %prec LOWER_THAN_ELSE { $$ = ast_if($3, $5, NULL); }
+    | IF '(' expressao ')' elemento ELSE elemento { $$ = ast_if($3, $5, $7); }
 ;
 
 Linha:

@@ -152,6 +152,13 @@ ASTNode *ast_case_block(ASTNode *case_expr, ASTNode *body) {
     return node;
 }
 
+ASTNode *ast_if(ASTNode *cond, ASTNode *then_body, ASTNode *else_body) {
+    ASTNode *node = ast_new(AST_IF);
+    node->left = cond;
+    node->right = ast_sequence(then_body, else_body);
+    return node;
+}
+
 ASTNode *ast_declare(int is_const, char *name, ASTNode *expression) {
     ASTNode *node = ast_new(AST_DECLARE);
     node->op = is_const; // Usamos o 'op' para guardar se é const (1) ou let/var (0)

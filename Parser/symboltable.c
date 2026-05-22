@@ -91,17 +91,23 @@ void sym_declare(const char *name, int is_const) {
     }
     
     s = create_symbol(name);
-    s->is_const = is_const;
+    // TRUQUE: 2 significa "É const, mas ainda não recebeu o primeiro valor"
+    s->is_const = (is_const == 1) ? 2 : 0;
 }
 
 void sym_set_int(const char *name, int value) {
     Symbol *s = find_symbol(name);
     if (s) {
-        // TRAVA DO CONST 
-        if (s->is_const) {
+        // Trava se já recebeu o primeiro valor (1)
+        if (s->is_const == 1) {
             printf("TypeError: Atribuicao a variavel constante '%s'.\n", name);
             return;
         }
+        // Recebeu o primeiro valor, tranca a porta para as próximas (vira 1)
+        if (s->is_const == 2) {
+            s->is_const = 1;
+        }
+        
         s->type = SYM_INT;
         s->ival = value;
         return;
@@ -123,10 +129,12 @@ int sym_get_int(const char *name) {
 void sym_set_str(const char *name, char *value) {
     Symbol *s = find_symbol(name);
     if (s) {
-        // TRAVA DO CONST 
-        if (s->is_const) {
+        if (s->is_const == 1) {
             printf("TypeError: Atribuicao a variavel constante '%s'.\n", name);
             return;
+        }
+        if (s->is_const == 2) {
+            s->is_const = 1;
         }
     } else {
         s = create_symbol(name);
