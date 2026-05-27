@@ -124,6 +124,14 @@ ASTNode *ast_for(ASTNode *init, ASTNode *cond, ASTNode *update, ASTNode *body) {
     return node;
 }
 
+ASTNode *ast_break_stmt(void) {
+    return ast_new(AST_BREAK);
+}
+
+ASTNode *ast_continue_stmt(void) {
+    return ast_new(AST_CONTINUE);
+}
+
 ASTNode *ast_array_access(ASTNode *array, ASTNode *index) {
     ASTNode *node = ast_new(AST_ARRAY_ACCESS);
     node->left = array;
@@ -253,6 +261,11 @@ RuntimeValue ast_eval(ASTNode *node) {
 
             if (node->right) {
                 right = ast_eval(node->right);
+
+                if (right.control_flow != CTRL_NONE) {
+                    return right;
+                }
+
                 return right;
             }
 
@@ -285,6 +298,21 @@ RuntimeValue ast_eval(ASTNode *node) {
                 if (!is_true) break;
 
                 last_val = ast_eval(node->right);
+
+                if (last_val.control_flow == CTRL_BREAK) {
+                    last_val.control_flow = CTRL_NONE;
+                    break;
+                }
+
+                if (last_val.control_flow == CTRL_CONTINUE) {
+                    last_val.control_flow = CTRL_NONE;
+
+                    if (node->extra) {
+                        ast_eval(node->extra);
+                    }
+
+                    continue;
+                }
 
                 if (node->extra) {
                     ast_eval(node->extra); // atualizacao
@@ -319,6 +347,21 @@ RuntimeValue ast_eval(ASTNode *node) {
 
                 last_val = ast_eval(node->right);
 
+                if (last_val.control_flow == CTRL_BREAK) {
+                    last_val.control_flow = CTRL_NONE;
+                    break;
+                }
+
+                if (last_val.control_flow == CTRL_CONTINUE) {
+                    last_val.control_flow = CTRL_NONE;
+
+                    if (node->extra) {
+                        ast_eval(node->extra);
+                    }
+
+                    continue;
+                }
+
                 if (node->extra) {
                     ast_eval(node->extra); // atualizacao
                 }
@@ -333,6 +376,16 @@ RuntimeValue ast_eval(ASTNode *node) {
 
             do {
                 last_val = ast_eval(node->right);
+
+                 if (last_val.control_flow == CTRL_BREAK) {
+                    last_val.control_flow = CTRL_NONE;
+                    break;
+                }
+
+                if (last_val.control_flow == CTRL_CONTINUE) {
+                    last_val.control_flow = CTRL_NONE;
+                }
+
                 cond_val = ast_eval(node->left);
                 if (!IS_TRUTHY(cond_val)) break;
             } while (1);
@@ -351,6 +404,14 @@ RuntimeValue ast_eval(ASTNode *node) {
             result.type = VAL_NULL;
             return result;
         }
+
+        case AST_BREAK:
+            result.control_flow = CTRL_BREAK;
+            return result;
+
+        case AST_CONTINUE:
+            result.control_flow = CTRL_CONTINUE;
+            return result;
 
         case AST_NUMBER:
             result.ival = node->value;
