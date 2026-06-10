@@ -57,6 +57,7 @@ static ASTNode *raiz = NULL;
 %token WHILE DO IF ELSE
 %token LET CONST VAR
 %token OP_atribuicao_nullish
+%token CONSOLE_LOG
 %token '[' ']'
 %token SWITCH CASE DEFAULT ':'
 
@@ -103,6 +104,7 @@ elemento:
     | SWITCH '(' expressao ')' '{' lista_cases '}' { $$ = ast_switch($3, $6); }
     | IF '(' expressao ')' elemento %prec LOWER_THAN_ELSE { $$ = ast_if($3, $5, NULL); }
     | IF '(' expressao ')' elemento ELSE elemento { $$ = ast_if($3, $5, $7); }
+    | CONSOLE_LOG '(' expressao ')' ';' { $$ = ast_console_log($3); }
 ;
 
 Linha:

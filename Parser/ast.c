@@ -167,6 +167,12 @@ ASTNode *ast_declare(int is_const, char *name, ASTNode *expression) {
     return node;
 }
 
+ASTNode *ast_console_log(ASTNode *expression) {
+    ASTNode *node = ast_new(AST_CONSOLE_LOG);
+    node->left = expression;
+    return node;
+}
+
 static RuntimeValue eval_assign(ASTNode *node, RuntimeValue value) {
     RuntimeValue result = value;
 
@@ -239,6 +245,7 @@ static RuntimeValue eval_assign(ASTNode *node, RuntimeValue value) {
             }
             novo = atual % value.ival;
             break;
+        
         default:
             novo = value.ival;
             break;
@@ -279,6 +286,15 @@ RuntimeValue ast_eval(ASTNode *node) {
                 printf("Resultado: %s\n", left.sval ? left.sval : "");
             } else {
                 printf("Resultado: %d\n", left.ival);
+            }
+            return left;
+
+        case AST_CONSOLE_LOG:
+            left = ast_eval(node->left);
+            if (left.type == VAL_STRING) {
+                printf("%s\n", left.sval ? left.sval : "");
+            } else {
+                printf("%d\n", left.ival);
             }
             return left;
 
@@ -715,6 +731,10 @@ void ast_dump(const ASTNode *node, int indent) {
             
         case AST_DECLARE:
             printf("DECLARE(%s, is_const=%d)\n", node->text, node->op);
+            ast_dump(node->left, indent + 2);
+            break;
+        case AST_CONSOLE_LOG:
+            puts("CONSOLE_LOG");
             ast_dump(node->left, indent + 2);
             break;
     }
