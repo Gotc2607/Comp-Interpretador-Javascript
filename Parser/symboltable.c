@@ -86,7 +86,6 @@ void sym_declare(const char *name, int is_const) {
     // let e const não permitem declarar a mesma variável duas vezes no mesmo bloco
     Symbol *s = find_in_current(name);
     if (s) {
-        fprintf(stderr, "Erro de Sintaxe: Identificador '%s' ja foi declarado neste escopo.\n", name);
         return;
     }
     
