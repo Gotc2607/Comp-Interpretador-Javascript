@@ -21,6 +21,7 @@ typedef struct Symbol {
     struct Symbol *next;   
     int        *arr_vals;
     int         arr_size;
+    int         is_const;
 } Symbol;
 
 typedef struct Scope {
@@ -51,5 +52,8 @@ int       sym_get_array_element(const char *name, int index);
 // Utilitários
 int       sym_exists(const char *name);
 SymbolType sym_get_type(const char *name);
+
+// Declaracao 
+void      sym_declare(const char *name, int is_const);
 
 #endif
