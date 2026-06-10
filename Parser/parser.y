@@ -108,7 +108,7 @@ elemento:
 ;
 
 Linha:
-      expressao ';' { $$ = ast_print_stmt($1); }
+    expressao ';' { $$ = $1; }
     | LET IDENT '=' expressao ';'   { $$ = ast_declare(0, $2, $4); }
     | CONST IDENT '=' expressao ';' { $$ = ast_declare(1, $2, $4); }
     | VAR IDENT '=' expressao ';'   { $$ = ast_declare(0, $2, $4); }

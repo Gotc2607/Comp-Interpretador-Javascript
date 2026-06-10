@@ -48,11 +48,6 @@ ASTNode *ast_sequence(ASTNode *left, ASTNode *right) {
     return node;
 }
 
-ASTNode *ast_print_stmt(ASTNode *expression) {
-    ASTNode *node = ast_new(AST_PRINT);
-    node->left = expression;
-    return node;
-}
 
 ASTNode *ast_block(ASTNode *body) {
     ASTNode *node = ast_new(AST_BLOCK);
@@ -278,15 +273,6 @@ RuntimeValue ast_eval(ASTNode *node) {
                 return right;
             }
 
-            return left;
-
-        case AST_PRINT:
-            left = ast_eval(node->left);
-            if (left.type == VAL_STRING) {
-                printf("Resultado: %s\n", left.sval ? left.sval : "");
-            } else {
-                printf("Resultado: %d\n", left.ival);
-            }
             return left;
 
         case AST_CONSOLE_LOG:
@@ -650,10 +636,7 @@ void ast_dump(const ASTNode *node, int indent) {
             ast_dump(node->right, indent + 2);
             break;
 
-        case AST_PRINT:
-            puts("PRINT");
-            ast_dump(node->left, indent + 2);
-            break;
+        
 
         case AST_BLOCK:
             puts("BLOCK");

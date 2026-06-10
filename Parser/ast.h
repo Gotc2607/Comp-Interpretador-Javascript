@@ -5,7 +5,6 @@ typedef struct ASTNode ASTNode;
 
 typedef enum {
     AST_SEQUENCE,
-    AST_PRINT,
     AST_CONSOLE_LOG,
     AST_BLOCK,
     AST_NUMBER,
@@ -39,7 +38,6 @@ typedef struct {
 } RuntimeValue;
 
 ASTNode *ast_sequence(ASTNode *left, ASTNode *right);
-ASTNode *ast_print_stmt(ASTNode *expression);
 ASTNode *ast_console_log(ASTNode *expression);
 ASTNode *ast_block(ASTNode *body);
 ASTNode *ast_number(int value);
