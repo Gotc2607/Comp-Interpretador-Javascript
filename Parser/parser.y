@@ -185,7 +185,9 @@ void yyerror(const char *s) {
 
 int main(void) {
     if (yyparse() == 0 && raiz != NULL) {
-        ast_eval(raiz);
+        if (ast_check(raiz)) {
+            ast_eval(raiz);
+        }
         ast_free(raiz);
         raiz = NULL;
     }

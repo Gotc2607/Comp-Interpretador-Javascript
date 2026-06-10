@@ -55,6 +55,7 @@ ASTNode *ast_switch(ASTNode *control_expr, ASTNode *cases_list);
 ASTNode *ast_case_block(ASTNode *case_expr, ASTNode *body);
 ASTNode *ast_for(ASTNode *init, ASTNode *cond, ASTNode *update, ASTNode *body);
 ASTNode *ast_declare(int is_const, char *name, ASTNode *expression);
+int ast_check(ASTNode *node);
 RuntimeValue ast_eval(ASTNode *node);
 void ast_free(ASTNode *node);
 void ast_dump(const ASTNode *node, int indent);
