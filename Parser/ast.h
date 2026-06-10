@@ -29,6 +29,7 @@ typedef enum {
     VAL_BOOL,
     VAL_STRING,
     VAL_NULL,
+    VAL_ERROR,
 } ValueType;
 
 typedef struct {

@@ -1,4 +1,4 @@
-i = 0;
+let i = 0;
 for (i = 0; i < 3; i = i + 1) {
-    i;
+    console.log(i);
 }

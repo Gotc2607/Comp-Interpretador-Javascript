@@ -1,5 +1,6 @@
 #include "ast.h"
 #include <math.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,6 +21,76 @@ struct ASTNode {
     ASTNode *right;
     ASTNode *extra;
 };
+
+typedef struct SemSymbol {
+    char name[64];
+    struct SemSymbol *next;
+} SemSymbol;
+
+typedef struct SemScope {
+    SemSymbol *symbols;
+    struct SemScope *parent;
+} SemScope;
+
+static SemScope sem_global = { NULL, NULL };
+static SemScope *sem_current = &sem_global;
+
+static SemSymbol *sem_find_in_current(const char *name) {
+    SemSymbol *sym = sem_current->symbols;
+    while (sym) {
+        if (strcmp(sym->name, name) == 0)
+            return sym;
+        sym = sym->next;
+    }
+    return NULL;
+}
+
+static int sem_exists(const char *name) {
+    SemScope *scope = sem_current;
+    while (scope) {
+        SemSymbol *sym = scope->symbols;
+        while (sym) {
+            if (strcmp(sym->name, name) == 0)
+                return 1;
+            sym = sym->next;
+        }
+        scope = scope->parent;
+    }
+    return 0;
+}
+
+static void semantic_error(const char *format, ...);
+
+static int sem_declare(const char *name) {
+    if (sem_find_in_current(name)) {
+        semantic_error("Erro de Sintaxe: Identificador '%s' ja foi declarado neste escopo.", name);
+        return 0;
+    }
+
+    SemSymbol *sym = calloc(1, sizeof(SemSymbol));
+    strncpy(sym->name, name, sizeof(sym->name) - 1);
+    sym->next = sem_current->symbols;
+    sem_current->symbols = sym;
+    return 1;
+}
+
+static void sem_scope_push(void) {
+    SemScope *novo = calloc(1, sizeof(SemScope));
+    novo->parent = sem_current;
+    sem_current = novo;
+}
+
+static void sem_scope_pop(void) {
+    SemSymbol *sym = sem_current->symbols;
+    while (sym) {
+        SemSymbol *next = sym->next;
+        free(sym);
+        sym = next;
+    }
+    SemScope *old = sem_current;
+    sem_current = sem_current->parent;
+    free(old);
+}
 
 static ASTNode *ast_new(ASTKind kind) {
     ASTNode *node = (ASTNode *)calloc(1, sizeof(ASTNode));
@@ -168,14 +239,123 @@ ASTNode *ast_console_log(ASTNode *expression) {
     return node;
 }
 
+static void semantic_error(const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    vfprintf(stderr, format, args);
+    va_end(args);
+    fprintf(stderr, "\n");
+}
+
+static int ast_check_node(ASTNode *node) {
+    if (!node) return 1;
+
+    int ok = 1;
+    switch (node->kind) {
+        case AST_SEQUENCE:
+            ok &= ast_check_node(node->left);
+            ok &= ast_check_node(node->right);
+            return ok;
+
+        case AST_CONSOLE_LOG:
+            return ast_check_node(node->left);
+
+        case AST_BLOCK:
+            sem_scope_push();
+            ok &= ast_check_node(node->left);
+            sem_scope_pop();
+            return ok;
+
+        case AST_WHILE:
+            ok &= ast_check_node(node->left);
+            ok &= ast_check_node(node->right);
+            return ok;
+
+        case AST_FOR:
+            if (node->left) ok &= ast_check_node(node->left);
+            if (node->mid) ok &= ast_check_node(node->mid);
+            if (node->extra) ok &= ast_check_node(node->extra);
+            ok &= ast_check_node(node->right);
+            return ok;
+
+        case AST_DO_WHILE:
+            ok &= ast_check_node(node->right);
+            ok &= ast_check_node(node->left);
+            return ok;
+
+        case AST_IF:
+            ok &= ast_check_node(node->left);
+            ok &= ast_check_node(node->right);
+            return ok;
+
+        case AST_NUMBER:
+        case AST_STRING:
+            return 1;
+
+        case AST_IDENTIFIER:
+            if (!sem_exists(node->text)) {
+                semantic_error("Erro semantico: variavel '%s' nao declarada", node->text);
+                return 0;
+            }
+            return 1;
+
+        case AST_ASSIGN:
+            if (!sem_exists(node->text)) {
+                semantic_error("Erro semantico: atribuicao para variavel nao declarada '%s'", node->text);
+                ok = 0;
+            }
+            ok &= ast_check_node(node->left);
+            return ok;
+
+        case AST_BINARY:
+            ok &= ast_check_node(node->left);
+            ok &= ast_check_node(node->right);
+            return ok;
+
+        case AST_UNARY:
+            return ast_check_node(node->left);
+
+        case AST_ARRAY_ACCESS:
+            ok &= ast_check_node(node->left);
+            ok &= ast_check_node(node->right);
+            return ok;
+
+        case AST_ARRAY_ASSIGN:
+            ok &= ast_check_node(node->left);
+            ok &= ast_check_node(node->right);
+            return ok;
+
+        case AST_SWITCH:
+            ok &= ast_check_node(node->left);
+            ok &= ast_check_node(node->right);
+            return ok;
+
+        case AST_CASE_BLOCK:
+            if (node->left) ok &= ast_check_node(node->left);
+            ok &= ast_check_node(node->right);
+            return ok;
+
+        case AST_DECLARE:
+            sem_declare(node->text);
+            ok &= ast_check_node(node->left);
+            return ok;
+
+        default:
+            return ok;
+    }
+}
+
+int ast_check(ASTNode *node) {
+    return ast_check_node(node);
+}
+
 static RuntimeValue eval_assign(ASTNode *node, RuntimeValue value) {
     RuntimeValue result = value;
 
     SymbolType tipo_atual = sym_get_type(node->text);
 
     if (node->op == OP_atribuicao_nullish) {
-        if (sym_exists(node->text) && (tipo_atual == SYM_INT || tipo_atual == SYM_STRING)) { 
-            // Se o seu interpretador considerar que variáveis existentes com tipo válido não mudam:
+        if (sym_exists(node->text) && sym_is_initialized(node->text) && (tipo_atual == SYM_INT || tipo_atual == SYM_STRING)) {
             if (tipo_atual == SYM_STRING) {
                 result.type = VAL_STRING;
                 result.sval = sym_get_str(node->text);
@@ -183,7 +363,7 @@ static RuntimeValue eval_assign(ASTNode *node, RuntimeValue value) {
                 result.type = VAL_INT;
                 result.ival = sym_get_int(node->text);
             }
-            return result; 
+            return result;
         }
         
         if (value.type == VAL_STRING) {
@@ -199,8 +379,8 @@ static RuntimeValue eval_assign(ASTNode *node, RuntimeValue value) {
 
     if (value.type == VAL_STRING) {
         if (node->op != '=') {
-            printf("Erro: atribuicao composta nao suporta string.\n");
-            result.type = VAL_NULL;
+            fprintf(stderr, "Erro: atribuicao composta nao suporta string.\n");
+            result.type = VAL_ERROR;
             result.sval = NULL;
             return result;
         }
@@ -224,8 +404,8 @@ static RuntimeValue eval_assign(ASTNode *node, RuntimeValue value) {
             break;
         case OP_atribuicao_divisao:
             if (value.ival == 0) {
-                printf("Erro: Divisao por zero!\n");
-                result.type = VAL_NULL;
+                fprintf(stderr, "Erro: Divisao por zero!\n");
+                result.type = VAL_ERROR;
                 result.sval = NULL;
                 return result;
             }
@@ -233,8 +413,8 @@ static RuntimeValue eval_assign(ASTNode *node, RuntimeValue value) {
             break;
         case OP_atribuicao_resto:
             if (value.ival == 0) {
-                printf("Erro: Divisao por zero!\n");
-                result.type = VAL_NULL;
+                fprintf(stderr, "Erro: Divisao por zero!\n");
+                result.type = VAL_ERROR;
                 result.sval = NULL;
                 return result;
             }
@@ -277,6 +457,9 @@ RuntimeValue ast_eval(ASTNode *node) {
 
         case AST_CONSOLE_LOG:
             left = ast_eval(node->left);
+            if (left.type == VAL_ERROR) {
+                return left;
+            }
             if (left.type == VAL_STRING) {
                 printf("%s\n", left.sval ? left.sval : "");
             } else {
@@ -390,12 +573,21 @@ RuntimeValue ast_eval(ASTNode *node) {
 
         case AST_ASSIGN:
             left = ast_eval(node->left);
+            if (left.type == VAL_ERROR) {
+                return left;
+            }
             result = eval_assign(node, left);
             return result;
 
         case AST_BINARY:
             left = ast_eval(node->left);
+            if (left.type == VAL_ERROR) {
+                return left;
+            }
             right = ast_eval(node->right);
+            if (right.type == VAL_ERROR) {
+                return right;
+            }
 
             switch (node->op) {
                 case OP_AND:
@@ -426,8 +618,8 @@ RuntimeValue ast_eval(ASTNode *node) {
                     return result;
                 case '%':
                     if (right.ival == 0) {
-                        printf("Erro: Divisao por zero!\n");
-                        result.ival = 0;
+                        fprintf(stderr, "Erro: Divisao por zero!\n");
+                        result.type = VAL_ERROR;
                         return result;
                     }
                     result.ival = left.ival % right.ival;
@@ -452,8 +644,8 @@ RuntimeValue ast_eval(ASTNode *node) {
                     return result;
                 case '/':
                     if (right.ival == 0) {
-                        printf("Erro: Divisao por zero!\n");
-                        result.ival = 0;
+                        fprintf(stderr, "Erro: Divisao por zero!\n");
+                        result.type = VAL_ERROR;
                         return result;
                     }
                     result.ival = left.ival / right.ival;
@@ -541,8 +733,8 @@ RuntimeValue ast_eval(ASTNode *node) {
                         return result;
                     }
                 }
-                printf("Erro: Operação inválida com colchetes.\n");
-                result.type = VAL_NULL;
+                fprintf(stderr, "Erro: Operação inválida com colchetes.\n");
+                result.type = VAL_ERROR;
                 return result;
             }
 
@@ -550,8 +742,8 @@ RuntimeValue ast_eval(ASTNode *node) {
             right = ast_eval(node->right);
 
             if (right.type != VAL_INT) {
-                printf("Erro: O índice do array precisa ser um número inteiro.\n");
-                result.type = VAL_NULL;
+                fprintf(stderr, "Erro: O índice do array precisa ser um número inteiro.\n");
+                result.type = VAL_ERROR;
                 return result;
             }
 
@@ -574,16 +766,21 @@ RuntimeValue ast_eval(ASTNode *node) {
         }
 
         case AST_DECLARE: {
-            RuntimeValue val = ast_eval(node->left);
+            RuntimeValue val = {VAL_NULL, 0, NULL};
+            if (node->left) {
+                val = ast_eval(node->left);
+            }
             
             // 1. Reserva o nome na memória e marca se é const
             sym_declare(node->text, node->op);
             
-            // 2. Salva o valor inicial
-            if (val.type == VAL_STRING) {
-                sym_set_str(node->text, val.sval ? val.sval : "");
-            } else {
-                sym_set_int(node->text, val.ival);
+            // 2. Salva o valor inicial, se houver
+            if (node->left) {
+                if (val.type == VAL_STRING) {
+                    sym_set_str(node->text, val.sval ? val.sval : "");
+                } else {
+                    sym_set_int(node->text, val.ival);
+                }
             }
             return val;
         }

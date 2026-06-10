@@ -110,8 +110,10 @@ elemento:
 Linha:
     expressao ';' { $$ = $1; }
     | LET IDENT '=' expressao ';'   { $$ = ast_declare(0, $2, $4); }
+    | LET IDENT ';'                 { $$ = ast_declare(0, $2, NULL); }
     | CONST IDENT '=' expressao ';' { $$ = ast_declare(1, $2, $4); }
     | VAR IDENT '=' expressao ';'   { $$ = ast_declare(0, $2, $4); }
+    | VAR IDENT ';'                 { $$ = ast_declare(0, $2, NULL); }
 ;
 
 Bloco:

@@ -22,6 +22,7 @@ typedef struct Symbol {
     int        *arr_vals;
     int         arr_size;
     int         is_const;
+    int         initialized;
 } Symbol;
 
 typedef struct Scope {
@@ -55,5 +56,6 @@ SymbolType sym_get_type(const char *name);
 
 // Declaracao 
 void      sym_declare(const char *name, int is_const);
+int       sym_is_initialized(const char *name);
 
 #endif
