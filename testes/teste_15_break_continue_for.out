@@ -1,0 +1,10 @@
+Resultado: 0   ← i; (iter 0,1,2,3 antes do break em i==4)
+Resultado: 1
+Resultado: 2
+Resultado: 3
+Resultado: 4   ← i; após o for (i ficou em 4, update não rodou)
+Resultado: 0   ← j; (iter 0,1, pula 2, continua 3,4,5)
+Resultado: 1
+Resultado: 3
+Resultado: 4
+Resultado: 5

@@ -1,0 +1,17 @@
+Resultado: 0   ← i = 0;
+Resultado: 1   ← i = i + 1; i;
+Resultado: 1
+Resultado: 2   ← i = i + 1; i;
+Resultado: 2
+Resultado: 3   ← i = i + 1; i==3 → continue (i; pulado)
+Resultado: 4   ← i = i + 1; i;
+Resultado: 4
+Resultado: 5   ← i = i + 1; i;
+Resultado: 5
+Resultado: 0   ← j = 0;
+Resultado: 2   ← j = j + 2; j;
+Resultado: 2
+Resultado: 4   ← j = j + 2; j==4 → continue (j; pulado)
+Resultado: 6   ← j = j + 2; j;
+Resultado: 6
+Resultado: 6   ← j; após o while
