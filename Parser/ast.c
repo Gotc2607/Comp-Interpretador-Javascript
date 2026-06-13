@@ -242,7 +242,6 @@ static RuntimeValue eval_assign(ASTNode *node, RuntimeValue value) {
     return result;
 }
 
-/* Macro auxiliar: mesma lógica de "truthy" usada em while/do-while */
 #define IS_TRUTHY(v) \
     (((v).type == VAL_INT && (v).ival != 0) || \
      ((v).type == VAL_STRING && (v).sval && (v).sval[0] != '\0'))
@@ -259,13 +258,16 @@ RuntimeValue ast_eval(ASTNode *node) {
         case AST_SEQUENCE:
             left = ast_eval(node->left);
 
+            if (left.control_flow != CTRL_NONE) { 
+                return left;
+            }
+
             if (node->right) {
                 right = ast_eval(node->right);
 
                 if (right.control_flow != CTRL_NONE) {
                     return right;
                 }
-
                 return right;
             }
 
