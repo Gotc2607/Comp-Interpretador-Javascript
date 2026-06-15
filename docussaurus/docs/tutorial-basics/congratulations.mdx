@@ -1,0 +1,64 @@
+---
+sidebar_position: 1
+---
+# Executando o Interpretador
+
+Interpretador de JavaScript (versao de estudo) para a materia de Compiladores, usando Flex (lexer) e Bison (parser).
+
+## Comandos para execução
+
+Execute na raíz do projeto:
+
+```bash
+make
+./interpretador
+```
+## Build e Testes
+- **Build:** Arquivo `Makefile`. Utilize o comando `make` para compilar e `make clean` para limpar binarios gerados.
+- **Testes Automatizados:** Suite de testes em Python. Para executar, rode `python3 executar_testes.py`. O script processa os arquivos em `testes/*.js` e compara a saida com os arquivos `*.out` correspondentes.
+
+## Teste rápido (entrada manual)
+
+Depois de rodar `./interpretador`, digite expressões como:
+
+Importante: os resultados são exibidos apenas quando a entrada termina em EOF.
+No Linux, pressione `Ctrl+D` para finalizar a entrada e disparar a avaliação da AST.
+
+```txt
+2 + 3 * 4;
+2 + 3 == 5;
+2 * 3 == 6;
+2 + 2 * 5 + 4 == 16;
+x += 5;
+x += 2 * 3;
+x + 1 == 12;
+1 == 1 && 2 == 2;
+1 == 0 && 2 == 2;
+```
+
+Saídas esperadas:
+
+- `Resultado: 14`
+- `Resultado: 1`
+- `Resultado: 1`
+- `Resultado: 1`
+- `Resultado: 5`
+- `Resultado: 11`
+- `Resultado: 1`
+- `Resultado: 1`
+- `Resultado: 0`
+
+## Teste automático por pipe
+
+```bash
+printf '2 + 3 * 4;\n2 + 3 == 5;\n2 * 3 == 6;\n' | ./interpretador
+```
+
+## Observações
+
+- Cada comando deve terminar com `;`.
+- A avaliação acontece no fim da entrada (EOF), não a cada linha digitada.
+- `IDENT` agora participa da AST e da tabela de símbolos durante a avaliação.
+- Em caso de erro de sintaxe, o parser exibirá mensagem de erro.
+
+
