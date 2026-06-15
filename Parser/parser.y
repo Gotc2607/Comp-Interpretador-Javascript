@@ -57,6 +57,7 @@ static ASTNode *raiz = NULL;
 %token WHILE DO IF ELSE
 %token LET CONST VAR
 %token OP_atribuicao_nullish
+%token CONSOLE_LOG
 %token '[' ']'
 %token SWITCH CASE DEFAULT ':'
 
@@ -103,13 +104,16 @@ elemento:
     | SWITCH '(' expressao ')' '{' lista_cases '}' { $$ = ast_switch($3, $6); }
     | IF '(' expressao ')' elemento %prec LOWER_THAN_ELSE { $$ = ast_if($3, $5, NULL); }
     | IF '(' expressao ')' elemento ELSE elemento { $$ = ast_if($3, $5, $7); }
+    | CONSOLE_LOG '(' expressao ')' ';' { $$ = ast_console_log($3); }
 ;
 
 Linha:
-      expressao ';' { $$ = ast_print_stmt($1); }
+    expressao ';' { $$ = $1; }
     | LET IDENT '=' expressao ';'   { $$ = ast_declare(0, $2, $4); }
+    | LET IDENT ';'                 { $$ = ast_declare(0, $2, NULL); }
     | CONST IDENT '=' expressao ';' { $$ = ast_declare(1, $2, $4); }
     | VAR IDENT '=' expressao ';'   { $$ = ast_declare(0, $2, $4); }
+    | VAR IDENT ';'                 { $$ = ast_declare(0, $2, NULL); }
 ;
 
 Bloco:
@@ -183,7 +187,9 @@ void yyerror(const char *s) {
 
 int main(void) {
     if (yyparse() == 0 && raiz != NULL) {
-        ast_eval(raiz);
+        if (ast_check(raiz)) {
+            ast_eval(raiz);
+        }
         ast_free(raiz);
         raiz = NULL;
     }

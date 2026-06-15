@@ -5,7 +5,7 @@ typedef struct ASTNode ASTNode;
 
 typedef enum {
     AST_SEQUENCE,
-    AST_PRINT,
+    AST_CONSOLE_LOG,
     AST_BLOCK,
     AST_NUMBER,
     AST_STRING,
@@ -21,7 +21,7 @@ typedef enum {
     AST_SWITCH,
     AST_CASE_BLOCK,
     AST_FOR,
-    AST_DECLARE
+    AST_DECLARE,
 } ASTKind;
 
 typedef enum {
@@ -29,6 +29,7 @@ typedef enum {
     VAL_BOOL,
     VAL_STRING,
     VAL_NULL,
+    VAL_ERROR,
 } ValueType;
 
 typedef struct {
@@ -38,7 +39,7 @@ typedef struct {
 } RuntimeValue;
 
 ASTNode *ast_sequence(ASTNode *left, ASTNode *right);
-ASTNode *ast_print_stmt(ASTNode *expression);
+ASTNode *ast_console_log(ASTNode *expression);
 ASTNode *ast_block(ASTNode *body);
 ASTNode *ast_number(int value);
 ASTNode *ast_string(char *value);
@@ -55,7 +56,7 @@ ASTNode *ast_switch(ASTNode *control_expr, ASTNode *cases_list);
 ASTNode *ast_case_block(ASTNode *case_expr, ASTNode *body);
 ASTNode *ast_for(ASTNode *init, ASTNode *cond, ASTNode *update, ASTNode *body);
 ASTNode *ast_declare(int is_const, char *name, ASTNode *expression);
-
+int ast_check(ASTNode *node);
 RuntimeValue ast_eval(ASTNode *node);
 void ast_free(ASTNode *node);
 void ast_dump(const ASTNode *node, int indent);

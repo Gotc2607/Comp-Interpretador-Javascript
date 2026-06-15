@@ -49,10 +49,10 @@ static Symbol *create_symbol(const char *name) {
     unsigned int idx = hash(name);
     s->next = current->buckets[idx];   // insere no início da lista
     current->buckets[idx] = s;
+    s->initialized = 0;
 
     return s;
 }
-
 
 void scope_push() {
     Scope *novo = calloc(1, sizeof(Scope));
@@ -86,7 +86,6 @@ void sym_declare(const char *name, int is_const) {
     // let e const não permitem declarar a mesma variável duas vezes no mesmo bloco
     Symbol *s = find_in_current(name);
     if (s) {
-        printf("Erro de Sintaxe: Identificador '%s' ja foi declarado neste escopo.\n", name);
         return;
     }
     
@@ -100,7 +99,7 @@ void sym_set_int(const char *name, int value) {
     if (s) {
         // Trava se já recebeu o primeiro valor (1)
         if (s->is_const == 1) {
-            printf("TypeError: Atribuicao a variavel constante '%s'.\n", name);
+            fprintf(stderr, "TypeError: Atribuicao a variavel constante '%s'.\n", name);
             return;
         }
         // Recebeu o primeiro valor, tranca a porta para as próximas (vira 1)
@@ -110,6 +109,7 @@ void sym_set_int(const char *name, int value) {
         
         s->type = SYM_INT;
         s->ival = value;
+        s->initialized = 1;
         return;
     }
     // Senão cria no escopo atual
@@ -130,7 +130,7 @@ void sym_set_str(const char *name, char *value) {
     Symbol *s = find_symbol(name);
     if (s) {
         if (s->is_const == 1) {
-            printf("TypeError: Atribuicao a variavel constante '%s'.\n", name);
+            fprintf(stderr, "TypeError: Atribuicao a variavel constante '%s'.\n", name);
             return;
         }
         if (s->is_const == 2) {
@@ -144,6 +144,7 @@ void sym_set_str(const char *name, char *value) {
     if (s->sval) free(s->sval);
     s->type = SYM_STRING;
     s->sval = strdup(value);
+    s->initialized = 1;
 }
 
 char *sym_get_str(const char *name) {
@@ -186,7 +187,12 @@ void sym_set_array_element(const char *name, int index, int value) {
         s->type = SYM_ARRAY;
         s->arr_vals = NULL;
         s->arr_size = 0;
+    } else if (s->type != SYM_ARRAY) {
+        s->type = SYM_ARRAY;
+        s->arr_vals = NULL;
+        s->arr_size = 0;
     }
+    s->initialized = 1;
 
     if (index >= s->arr_size) {
         int novo_tamanho = index + 1;
@@ -205,4 +211,9 @@ int sym_get_array_element(const char *name, int index) {
         return s->arr_vals[index];
     }
     return 0;
+}
+
+int sym_is_initialized(const char *name) {
+    Symbol *s = find_symbol(name);
+    return s ? s->initialized : 0;
 }

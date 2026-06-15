@@ -1,24 +1,27 @@
-x = 10;
+let x = 10;
+let y = 0;
+let z = 0;
+
 if (x > 5) {
     y = 1;
-    y;
+    console.log(y);
 }
 
 if (x < 5) {
     y = 99;
-    y;
+    console.log(y);
 } else {
     y = 2;
-    y;
+    console.log(y);
 }
 
 if (x == 10) {
     z = 100;
-    z;
+    console.log(z);
 } else if (x == 20) {
     z = 200;
-    z;
+    console.log(z);
 } else {
     z = 300;
-    z;
+    console.log(z);
 }
