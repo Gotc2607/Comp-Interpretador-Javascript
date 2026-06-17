@@ -1,0 +1,10 @@
+Resultado: 0   ← i = 0;
+Resultado: 1   ← i = i + 1 (iter 1)
+Resultado: 2   ← i = i + 1 (iter 2)
+Resultado: 3   ← i = i + 1 (iter 3, depois break)
+Resultado: 3   ← i; após o while
+Resultado: 0   ← j = 0;
+Resultado: 1   ← j = j + 1 (iter 1, j==2? não → j; = 1)
+Resultado: 1   ← j; (iter 1)
+Resultado: 2   ← j = j + 1 (iter 2, j==2? sim → break)
+Resultado: 2   ← j; após o while
