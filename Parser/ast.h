@@ -22,7 +22,8 @@ typedef enum {
     AST_CASE_BLOCK,
     AST_FOR,
     AST_BREAK,
-    AST_CONTINUE
+    AST_CONTINUE,
+    AST_DECLARE
 } ASTKind;
 
 typedef enum {
@@ -62,6 +63,7 @@ ASTNode *ast_case_block(ASTNode *case_expr, ASTNode *body);
 ASTNode *ast_for(ASTNode *init, ASTNode *cond, ASTNode *update, ASTNode *body);
 ASTNode *ast_break_stmt(void);
 ASTNode *ast_continue_stmt(void);
+ASTNode *ast_declare(int is_const, char *name, ASTNode *expression);
 
 RuntimeValue ast_eval(ASTNode *node);
 void ast_free(ASTNode *node);

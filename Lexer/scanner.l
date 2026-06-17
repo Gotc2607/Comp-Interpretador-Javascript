@@ -20,7 +20,7 @@
 "/="        { return OP_atribuicao_divisao; }
 "%="        { return OP_atribuicao_resto; }
 "&&"        { return OP_AND; }
-"//"[^\n]*  { /* ignora comentario de linha */ }
+"//"[^\n]* { /* ignora comentario de linha */ }
 "+"         { return '+'; }
 "*"         { return '*'; }
 "/"         { return '/'; }
@@ -58,6 +58,9 @@
 "do"        { return DO; }
 "if"        { return IF; }
 "else"      { return ELSE; }
+"let"       { return LET; }
+"const"     { return CONST; }
+"var"       { return VAR; }
 "??="       { return OP_atribuicao_nullish; }
 "["         { return '['; }
 "]"         { return ']'; }
