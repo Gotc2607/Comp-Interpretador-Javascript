@@ -2,11 +2,11 @@ let idade = 20;
 var nome = "Eduardo";
 const pi = 3;
 
-idade;
-nome;
-pi;
+console.log(idade);
+console.log(nome);
+console.log(pi);
 
 idade = 21;
-idade;
+console.log(idade);
 
 pi = 4;

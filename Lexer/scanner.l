@@ -70,6 +70,7 @@
 "case"      { return CASE; }
 "default"   { return DEFAULT; }
 ":"         { return ':'; }
+"console.log" { return CONSOLE_LOG; }
 
 [0-9]+      {
     yylval.ival = atoi(yytext);

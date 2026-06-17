@@ -1,14 +1,15 @@
+let x;
 x[0] = 10;
 x[1] = 20;
 x[2] = 30;
 
-x[0];
-x[1];
-x[2];
+console.log(x[0]);
+console.log(x[1]);
+console.log(x[2]);
 
 x[1] = 99;
-x[1];
+console.log(x[1]);
 
-i = 1;
+let i = 1;
 x[i + 1] = 50;
-x[2];
+console.log(x[2]);

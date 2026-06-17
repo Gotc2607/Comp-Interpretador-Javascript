@@ -1,4 +1,5 @@
-x = 2;
+let x = 2;
+let y = 0;
 switch (x) {
     case 1: {
         y = 10;
@@ -10,4 +11,4 @@ switch (x) {
         y = 99;
     }
 }
-y;
+console.log(y);

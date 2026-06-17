@@ -11,26 +11,60 @@ C_WARN = '\033[93m'
 C_RESET = '\033[0m'
 
 def executar_teste(arquivo_js, arquivo_gabarito):
+    arquivo_err = arquivo_js.replace('.js', '.err')
+    arquivo_rc = arquivo_js.replace('.js', '.rc')
+
     try:
         with open(arquivo_js, 'r') as f_in:
             resultado = subprocess.run(
                 [EXECUTAVEL], stdin=f_in, capture_output=True, text=True, timeout=5
             )
-        
+
         saida_obtida = resultado.stdout.strip()
+        erro_obtido = resultado.stderr.strip()
+        rc_obtido = resultado.returncode
 
-        with open(arquivo_gabarito, 'r') as f_out:
-            saida_esperada = f_out.read().strip()
+        saida_esperada = ''
+        if os.path.exists(arquivo_gabarito):
+            with open(arquivo_gabarito, 'r') as f_out:
+                saida_esperada = f_out.read().strip()
 
-        if saida_obtida == saida_esperada:
-            print(f"{C_PASS}[PASS]{C_RESET} {arquivo_js}")
-            return True
-        else:
+        erro_esperado = ''
+        if os.path.exists(arquivo_err):
+            with open(arquivo_err, 'r') as f_err:
+                erro_esperado = f_err.read().strip()
+
+        rc_esperado = 0
+        if os.path.exists(arquivo_rc):
+            with open(arquivo_rc, 'r') as f_rc:
+                rc_esperado = int(f_rc.read().strip())
+
+        passou = True
+
+        if saida_obtida != saida_esperada:
+            passou = False
             print(f"{C_FAIL}[FAIL]{C_RESET} {arquivo_js}")
-            print(f"       Esperado: '{saida_esperada}'")
-            print(f"       Obtido:   '{saida_obtida}'")
-            return False
-            
+            print(f"       stdout esperado: '{saida_esperada}'")
+            print(f"       stdout obtido:   '{saida_obtida}'")
+
+        if erro_obtido != erro_esperado:
+            if passou:
+                print(f"{C_FAIL}[FAIL]{C_RESET} {arquivo_js}")
+                passou = False
+            print(f"       stderr esperado: '{erro_esperado}'")
+            print(f"       stderr obtido:   '{erro_obtido}'")
+
+        if rc_obtido != rc_esperado:
+            if passou:
+                print(f"{C_FAIL}[FAIL]{C_RESET} {arquivo_js}")
+                passou = False
+            print(f"       return code esperado: {rc_esperado}")
+            print(f"       return code obtido:   {rc_obtido}")
+
+        if passou:
+            print(f"{C_PASS}[PASS]{C_RESET} {arquivo_js}")
+        return passou
+
     except Exception as e:
         print(f"{C_FAIL}[ERROR]{C_RESET} Falha na execucao de {arquivo_js}: {e}")
         return False
