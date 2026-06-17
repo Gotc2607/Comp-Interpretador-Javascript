@@ -1,3 +1,6 @@
+let i; // Adicione isso!
+let j; // Adicione isso!
+
 i = 0;
 while (i < 5) {
     i = i + 1;

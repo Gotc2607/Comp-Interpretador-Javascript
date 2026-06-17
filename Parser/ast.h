@@ -24,6 +24,11 @@ typedef enum {
     AST_DECLARE,
     AST_BREAK,
     AST_CONTINUE,
+    AST_FUNC_DECL,
+    AST_FUNC_CALL,
+    AST_RETURN,
+    AST_PARAM_LIST,
+    AST_ARG_LIST,
 } ASTKind;
 
 typedef enum {
@@ -44,6 +49,7 @@ typedef struct {
 #define CTRL_NONE 0
 #define CTRL_BREAK 1
 #define CTRL_CONTINUE 2
+#define CTRL_RETURN 3
 
 ASTNode *ast_sequence(ASTNode *left, ASTNode *right);
 ASTNode *ast_console_log(ASTNode *expression);
@@ -69,5 +75,10 @@ int ast_check(ASTNode *node);
 RuntimeValue ast_eval(ASTNode *node);
 void ast_free(ASTNode *node);
 void ast_dump(const ASTNode *node, int indent);
+ASTNode *ast_func_decl(char *name, ASTNode *params, ASTNode *body);
+ASTNode *ast_func_call(char *name, ASTNode *args);
+ASTNode *ast_return(ASTNode *expr);
+ASTNode *ast_param_list(char *name, ASTNode *next);
+ASTNode *ast_arg_list(ASTNode *expr, ASTNode *next);
 
 #endif

@@ -1,0 +1,23 @@
+=== TESTE GERAL DE INTEGRACAO ===
+1. Declaracoes e Nullish:
+10
+Interpretador
+42
+2. Matematica e ++/--:
+16
+2
+8
+3. Logica e Comparacao:
+1
+1
+4. Switch/Case:
+200
+5. Laco For (Break/Continue):
+5
+6. Arrays e Indexacao de String:
+100
+I
+7. Funcoes e Escopo:
+8
+99
+=== FIM DO TESTE ===

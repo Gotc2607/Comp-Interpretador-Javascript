@@ -61,9 +61,10 @@ static ASTNode *raiz = NULL;
 %token '[' ']'
 %token SWITCH CASE DEFAULT ':'
 %token BREAK CONTINUE
+%token FUNCTION RETURN ','
 
 %type <node> programa elementos elemento Linha Bloco lista_linhas expressao lista_cases bloco_case
-%type <node> expressao_opt
+%type <node> expressao_opt params_opt param_list args_opt arg_list
 
 %right OP_atribuicao_nullish
 %right OP_atribuicao_soma
@@ -108,6 +109,8 @@ elemento:
     | IF '(' expressao ')' elemento %prec LOWER_THAN_ELSE { $$ = ast_if($3, $5, NULL); }
     | IF '(' expressao ')' elemento ELSE elemento { $$ = ast_if($3, $5, $7); }
     | CONSOLE_LOG '(' expressao ')' ';' { $$ = ast_console_log($3); }
+    | FUNCTION IDENT '(' params_opt ')' Bloco { $$ = ast_func_decl($2, $4, $6); }
+    | RETURN expressao_opt ';' { $$ = ast_return($2); }
 ;
 
 Linha:
@@ -143,10 +146,31 @@ bloco_case:
     | DEFAULT ':' lista_linhas        { $$ = ast_case_block(NULL, $3); }
     ;
 
+params_opt:
+      /* vazio */ { $$ = NULL; }
+    | param_list  { $$ = $1; }
+;
+
+param_list:
+      IDENT                  { $$ = ast_param_list($1, NULL); }
+    | IDENT ',' param_list   { $$ = ast_param_list($1, $3); }
+;
+
+args_opt:
+      /* vazio */ { $$ = NULL; }
+    | arg_list    { $$ = $1; }
+;
+
+arg_list:
+      expressao                { $$ = ast_arg_list($1, NULL); }
+    | expressao ',' arg_list   { $$ = ast_arg_list($1, $3); }
+;
+
 expressao:
     NUMBER { $$ = ast_number($1); }
     | STRING { $$ = ast_string($1); }
     | IDENT  { $$ = ast_identifier($1); }
+    | IDENT '(' args_opt ')' { $$ = ast_func_call($1, $3); }
     | IDENT OP_atribuicao_soma expressao { $$ = ast_assign(OP_atribuicao_soma, $1, $3); }
     | IDENT OP_atribuicao_subtracao expressao { $$ = ast_assign(OP_atribuicao_subtracao, $1, $3); }
     | IDENT OP_atribuicao_potencia expressao { $$ = ast_assign(OP_atribuicao_potencia, $1, $3); }
@@ -181,6 +205,8 @@ expressao:
           $$ = ast_array_assign(acesso, $6); 
       }
     ;
+    | OP_Incremento IDENT { $$ = ast_unary(OP_Incremento, ast_identifier($2)); }
+    | OP_Decremento IDENT { $$ = ast_unary(OP_Decremento, ast_identifier($2)); }
 
 %%
 

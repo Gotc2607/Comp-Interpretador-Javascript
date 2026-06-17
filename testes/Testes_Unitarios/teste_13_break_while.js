@@ -1,3 +1,6 @@
+let i; // Adicione isso!
+let j; // Adicione isso!
+
 i = 0;
 while (i < 10) {
     if (i == 3) break;
