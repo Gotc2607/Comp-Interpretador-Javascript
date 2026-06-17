@@ -60,6 +60,7 @@ static ASTNode *raiz = NULL;
 %token CONSOLE_LOG
 %token '[' ']'
 %token SWITCH CASE DEFAULT ':'
+%token BREAK CONTINUE
 
 %type <node> programa elementos elemento Linha Bloco lista_linhas expressao lista_cases bloco_case
 %type <node> expressao_opt
@@ -102,6 +103,8 @@ elemento:
     | FOR '(' expressao_opt ';' expressao_opt ';' expressao_opt ')' elemento { $$ = ast_for($3, $5, $7, $9); }
     | DO Bloco WHILE '(' expressao ')' ';' { $$ = ast_do_while($5, $2); }
     | SWITCH '(' expressao ')' '{' lista_cases '}' { $$ = ast_switch($3, $6); }
+    | BREAK ';' { $$ = ast_break_stmt(); }
+    | CONTINUE ';' { $$ = ast_continue_stmt(); }
     | IF '(' expressao ')' elemento %prec LOWER_THAN_ELSE { $$ = ast_if($3, $5, NULL); }
     | IF '(' expressao ')' elemento ELSE elemento { $$ = ast_if($3, $5, $7); }
     | CONSOLE_LOG '(' expressao ')' ';' { $$ = ast_console_log($3); }

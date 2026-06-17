@@ -65,6 +65,8 @@
 "["         { return '['; }
 "]"         { return ']'; }
 "switch"    { return SWITCH; }
+"break"     { return BREAK; }
+"continue"  { return CONTINUE; }
 "case"      { return CASE; }
 "default"   { return DEFAULT; }
 ":"         { return ':'; }

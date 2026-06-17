@@ -22,6 +22,8 @@ typedef enum {
     AST_CASE_BLOCK,
     AST_FOR,
     AST_DECLARE,
+    AST_BREAK,
+    AST_CONTINUE,
 } ASTKind;
 
 typedef enum {
@@ -36,7 +38,12 @@ typedef struct {
     ValueType type;
     int ival;
     char *sval;
+    int control_flow;
 } RuntimeValue;
+
+#define CTRL_NONE 0
+#define CTRL_BREAK 1
+#define CTRL_CONTINUE 2
 
 ASTNode *ast_sequence(ASTNode *left, ASTNode *right);
 ASTNode *ast_console_log(ASTNode *expression);
@@ -55,6 +62,8 @@ ASTNode *ast_array_assign(ASTNode *array_access, ASTNode *expression);
 ASTNode *ast_switch(ASTNode *control_expr, ASTNode *cases_list);
 ASTNode *ast_case_block(ASTNode *case_expr, ASTNode *body);
 ASTNode *ast_for(ASTNode *init, ASTNode *cond, ASTNode *update, ASTNode *body);
+ASTNode *ast_break_stmt(void);
+ASTNode *ast_continue_stmt(void);
 ASTNode *ast_declare(int is_const, char *name, ASTNode *expression);
 int ast_check(ASTNode *node);
 RuntimeValue ast_eval(ASTNode *node);
