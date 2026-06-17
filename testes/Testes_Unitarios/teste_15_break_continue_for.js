@@ -1,3 +1,7 @@
+
+let i; // Adicione isso!
+let j; // Adicione isso!
+
 for (i = 0; i < 10; i = i + 1) {
     if (i == 4) break;
     i;

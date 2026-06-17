@@ -74,17 +74,24 @@ def main():
         print(f"Erro Fatal: Executavel '{EXECUTAVEL}' nao encontrado. Compile primeiro.")
         sys.exit(1)
         
-    arquivos = [f for f in os.listdir(DIRETORIO_TESTES) if f.endswith(".js")]
-    arquivos.sort()
+    # Usando os.walk para buscar arquivos .js recursivamente (incluindo subpastas)
+    arquivos_js = []
+    for root, dirs, files in os.walk(DIRETORIO_TESTES):
+        for file in files:
+            if file.endswith(".js"):
+                # Guarda o caminho completo do arquivo
+                arquivos_js.append(os.path.join(root, file))
+                
+    arquivos_js.sort()
     
-    total = len(arquivos)
+    total = len(arquivos_js)
     passou = 0
 
     print(f"Executando suite de testes ({total} casos de teste)...\n")
 
-    for arq in arquivos:
-        js = os.path.join(DIRETORIO_TESTES, arq)
-        gabarito = os.path.join(DIRETORIO_TESTES, arq.replace(".js", ".out"))
+    for js in arquivos_js:
+        
+        gabarito = js.replace(".js", ".out")
         
         if executar_teste(js, gabarito):
             passou += 1

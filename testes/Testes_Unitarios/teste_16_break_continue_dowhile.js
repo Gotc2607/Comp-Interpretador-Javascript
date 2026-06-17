@@ -1,4 +1,5 @@
-x = 0;
+let x; // Adicione isso!
+let y; // Adicione isso!x = 0;
 do {
     x = x + 1;
     if (x == 3) break;

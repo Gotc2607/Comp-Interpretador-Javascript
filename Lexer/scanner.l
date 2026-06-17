@@ -71,6 +71,9 @@
 "default"   { return DEFAULT; }
 ":"         { return ':'; }
 "console.log" { return CONSOLE_LOG; }
+"function"  { return FUNCTION; }
+"return"    { return RETURN; }
+","         { return ','; }
 
 [0-9]+      {
     yylval.ival = atoi(yytext);
