@@ -10,7 +10,12 @@
 #define MAX_VARS 256
 #define MAX_LOOP_ITERATIONS 1000000
 
+static int strict_mode_ativo = 0;
 static int call_depth = 0;
+
+void ativar_strict_mode(void) {
+    strict_mode_ativo = 1;
+}
 
 static int verificar_igualdade_estrita(RuntimeValue left, RuntimeValue right);
 
@@ -359,8 +364,7 @@ static int ast_check_node(ASTNode *node) {
 
         case AST_ASSIGN:
             if (!sem_exists(node->text)) {
-                semantic_error("Erro semantico: atribuicao para variavel nao declarada '%s'", node->text);
-                ok = 0;
+                sem_declare(node->text);
             }
             ok &= ast_check_node(node->left);
             return ok;
@@ -434,6 +438,11 @@ int ast_check(ASTNode *node) {
 
 static RuntimeValue eval_assign(ASTNode *node, RuntimeValue value) {
     RuntimeValue result = value;
+
+    if (strict_mode_ativo && !sym_exists(node->text)) {
+        fprintf(stderr, "ReferenceError: %s is not defined (Strict Mode)\n", node->text);
+        exit(EXIT_FAILURE);
+    }
 
     SymbolType tipo_atual = sym_get_type(node->text);
 

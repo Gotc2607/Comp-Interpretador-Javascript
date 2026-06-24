@@ -80,5 +80,6 @@ ASTNode *ast_func_call(char *name, ASTNode *args);
 ASTNode *ast_return(ASTNode *expr);
 ASTNode *ast_param_list(char *name, ASTNode *next);
 ASTNode *ast_arg_list(ASTNode *expr, ASTNode *next);
+void ativar_strict_mode(void);
 
 #endif
