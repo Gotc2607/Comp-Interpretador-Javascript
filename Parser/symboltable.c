@@ -42,6 +42,10 @@ static Symbol *find_in_current(const char *name) {
 
 static Symbol *create_symbol(const char *name) {
     Symbol *s = calloc(1, sizeof(Symbol));
+    if (!s) {
+        fprintf(stderr, "Erro de Seguranca: Memoria insuficiente (Out of Memory).\n");
+        exit(EXIT_FAILURE);
+    }
     strncpy(s->name, name, sizeof(s->name) - 1);
 
     unsigned int idx = hash(name);
@@ -54,6 +58,10 @@ static Symbol *create_symbol(const char *name) {
 
 void scope_push() {
     Scope *novo = calloc(1, sizeof(Scope));
+    if (!novo) {
+        fprintf(stderr, "Erro de Seguranca: Memoria insuficiente ao criar escopo.\n");
+        exit(EXIT_FAILURE);
+    }
     novo->parent = current;
     current = novo;
 }
@@ -142,6 +150,10 @@ void sym_set_str(const char *name, char *value) {
     if (s->sval) free(s->sval);
     s->type = SYM_STRING;
     s->sval = strdup(value);
+    if (!s->sval) {
+        fprintf(stderr, "Erro de Seguranca: Memoria insuficiente para string.\n");
+        exit(EXIT_FAILURE);
+    }
     s->initialized = 1;
 }
 
@@ -177,6 +189,11 @@ SymbolType sym_get_type(const char *name) {
 }
 
 void sym_set_array_element(const char *name, int index, int value) {
+    if (index < 0 || index > 1000000) {
+        fprintf(stderr, "Erro de Seguranca: Manipulacao de memoria nao prevista. Indice %d invalido.\n", index);
+        return;
+    }
+
     Symbol *s = find_symbol(name); 
     
     if (!s) {
@@ -196,6 +213,10 @@ void sym_set_array_element(const char *name, int index, int value) {
     if (index >= s->arr_size) {
         int novo_tamanho = index + 1;
         s->arr_vals = realloc(s->arr_vals, novo_tamanho * sizeof(int));
+        if (!s->arr_vals) {
+            fprintf(stderr, "Erro de Seguranca: Memoria insuficiente para array.\n");
+            exit(EXIT_FAILURE);
+        }
         for (int i = s->arr_size; i < novo_tamanho; i++) {
             s->arr_vals[i] = 0;
         }
