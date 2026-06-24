@@ -93,3 +93,38 @@ void sym_set_int(const char *name, int value) {
     // ... criação padrão ...
 }
 ```
+
+## 5. Escopo de Bloco e Shadowing (Sombreamento)
+
+O interpretador agora suporta escopo de bloco e sombreamento de variáveis (shadowing) no tempo de execução.
+
+### Funcionamento do Escopo de Bloco
+
+Quando um bloco de código `{ ... }` é executado, um novo escopo de símbolos é criado empilhando-o sobre o escopo atual (escopo pai). Qualquer variável declarada dentro desse bloco é local a ele. Ao sair do bloco, esse escopo local é destruído e as variáveis locais deixam de existir.
+
+Lógica de execução do `AST_BLOCK` em `Parser/ast.c`:
+```c
+case AST_BLOCK: {
+    scope_push(); // Cria um novo escopo encadeado
+    RuntimeValue val = ast_eval(node->left);
+    scope_pop();  // Destrói o escopo local ao sair do bloco
+    return val;
+}
+```
+
+### Shadowing (Sombreamento)
+
+Se uma variável for declarada dentro de um bloco com o mesmo nome de uma variável já existente em um escopo externo (pai), a variável interna **sombreia** a externa.
+- Leituras e escritas dentro do bloco afetam apenas a variável do escopo mais interno.
+- A variável externa permanece intacta e volta a ficar visível/ativa assim que a execução sai do bloco `{ ... }`.
+
+#### Exemplo de Shadowing suportado:
+```js
+let x = 1;
+{
+  let x = 2;
+  console.log(x); // Imprime 2
+}
+console.log(x); // Imprime 1
+```
+```
