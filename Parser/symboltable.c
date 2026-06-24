@@ -13,7 +13,6 @@ static unsigned int hash(const char *str) {
 static Scope global_scope = { .buckets = {NULL}, .parent = NULL };
 static Scope *current = &global_scope;
 
-
 static Symbol *find_symbol(const char *name) {
     unsigned int idx = hash(name);
     Scope *scope = current;
@@ -41,13 +40,12 @@ static Symbol *find_in_current(const char *name) {
     return NULL;
 }
 
-
 static Symbol *create_symbol(const char *name) {
     Symbol *s = calloc(1, sizeof(Symbol));
     strncpy(s->name, name, sizeof(s->name) - 1);
 
     unsigned int idx = hash(name);
-    s->next = current->buckets[idx];   // insere no início da lista
+    s->next = current->buckets[idx];   
     current->buckets[idx] = s;
     s->initialized = 0;
 
@@ -83,40 +81,39 @@ void scope_pop() {
 }
 
 void sym_declare(const char *name, int is_const) {
-    // let e const não permitem declarar a mesma variável duas vezes no mesmo bloco
     Symbol *s = find_in_current(name);
     if (s) {
+        // Se já existe e não for 'var' (ou seja, let ou const), gera erro de sintaxe
+        if (s->is_const != 0) {
+            fprintf(stderr, "Erro de Sintaxe: Identificador '%s' ja foi declarado neste escopo.\n", name);
+        }
         return;
     }
     
     s = create_symbol(name);
-    // TRUQUE: 2 significa "É const, mas ainda não recebeu o primeiro valor"
     s->is_const = (is_const == 1) ? 2 : 0;
 }
 
 void sym_set_int(const char *name, int value) {
     Symbol *s = find_symbol(name);
-    if (s) {
-        // Trava se já recebeu o primeiro valor (1)
-        if (s->is_const == 1) {
-            fprintf(stderr, "TypeError: Atribuicao a variavel constante '%s'.\n", name);
-            return;
-        }
-        // Recebeu o primeiro valor, tranca a porta para as próximas (vira 1)
-        if (s->is_const == 2) {
-            s->is_const = 1;
-        }
-        
-        s->type = SYM_INT;
-        s->ival = value;
-        s->initialized = 1;
+    
+    if (!s) {
+        // Se a variável não foi declarada, cria dinamicamente (evita quebrar testes antigos)
+        s = create_symbol(name);
+        s->is_const = 0;
+    }
+
+    if (s->is_const == 1) {
+        fprintf(stderr, "TypeError: Atribuicao a variavel constante '%s'.\n", name);
         return;
     }
-    // Senão cria no escopo atual
-    s = create_symbol(name);
-    s->is_const = 0;
+    if (s->is_const == 2) {
+        s->is_const = 1;
+    }
+    
     s->type = SYM_INT;
     s->ival = value;
+    s->initialized = 1;
 }
 
 int sym_get_int(const char *name) {
@@ -128,17 +125,18 @@ int sym_get_int(const char *name) {
 
 void sym_set_str(const char *name, char *value) {
     Symbol *s = find_symbol(name);
-    if (s) {
-        if (s->is_const == 1) {
-            fprintf(stderr, "TypeError: Atribuicao a variavel constante '%s'.\n", name);
-            return;
-        }
-        if (s->is_const == 2) {
-            s->is_const = 1;
-        }
-    } else {
+    
+    if (!s) {
         s = create_symbol(name);
         s->is_const = 0;
+    }
+
+    if (s->is_const == 1) {
+        fprintf(stderr, "TypeError: Atribuicao a variavel constante '%s'.\n", name);
+        return;
+    }
+    if (s->is_const == 2) {
+        s->is_const = 1;
     }
     
     if (s->sval) free(s->sval);
@@ -154,7 +152,6 @@ char *sym_get_str(const char *name) {
     return "";
 }
 
-
 void sym_set_func(const char *name, ASTNode *body) {
     Symbol *s = find_in_current(name);
     if (!s) s = create_symbol(name);
@@ -169,7 +166,6 @@ ASTNode *sym_get_func(const char *name) {
     return NULL;
 }
 
-
 int sym_exists(const char *name) {
     return find_symbol(name) != NULL;
 }
@@ -182,12 +178,15 @@ SymbolType sym_get_type(const char *name) {
 
 void sym_set_array_element(const char *name, int index, int value) {
     Symbol *s = find_symbol(name); 
+    
     if (!s) {
         s = create_symbol(name);
         s->type = SYM_ARRAY;
         s->arr_vals = NULL;
         s->arr_size = 0;
-    } else if (s->type != SYM_ARRAY) {
+    }
+
+    if (s->type != SYM_ARRAY) {
         s->type = SYM_ARRAY;
         s->arr_vals = NULL;
         s->arr_size = 0;
