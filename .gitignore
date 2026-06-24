@@ -8,9 +8,6 @@ Lexer/lex.yy.c
 Parser/parser.tab.c
 Parser/parser.tab.h
 
-# Arquivos de objeto e compilação
-*.o
-*.out
 
 # === Python (Testes e Ambiente) ===
 # Cache e arquivos compilados
