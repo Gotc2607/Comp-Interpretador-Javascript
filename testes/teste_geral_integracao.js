@@ -74,4 +74,33 @@ function fibonacci(n) {
 console.log(fibonacci(6));
 console.log(globalVar);
 
+console.log("8. Concatencacao de Strings (+):");
+console.log("a" + "b");
+console.log("Val: " + 42);
+console.log(1 + "!");
+
+console.log("9. Escopo de Bloco (Shadowing):");
+let shadowVar = 10;
+{
+    let shadowVar = 20;
+    console.log(shadowVar);
+}
+console.log(shadowVar);
+
+console.log("10. Switch com Fallthrough:");
+let swVal = 2;
+let swOut = 0;
+switch (swVal) {
+    case 1:
+        swOut += 1;
+    case 2:
+        swOut += 10;
+    case 3:
+        swOut += 100;
+        break;
+    default:
+        swOut += 1000;
+}
+console.log(swOut);
+
 console.log("=== FIM DO TESTE ===");

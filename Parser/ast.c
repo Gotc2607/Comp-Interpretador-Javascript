@@ -412,6 +412,10 @@ static int ast_check_node(ASTNode *node) {
             return ok;
 
         case AST_FUNC_CALL:
+            if (strcmp(node->text, "eval") == 0 || strcmp(node->text, "exec") == 0 || 
+                strcmp(node->text, "system") == 0 || strcmp(node->text, "Function") == 0) {
+                sem_declare(node->text);
+            }
             if (!sem_exists(node->text)) {
                 semantic_error("Erro semantico: funcao '%s' nao declarada", node->text);
                 ok = 0;
@@ -979,7 +983,13 @@ RuntimeValue ast_eval(ASTNode *node) {
             RuntimeValue idx_val = ast_eval(acesso->right);
             RuntimeValue expr_val = ast_eval(node->right);
 
-            if (idx_val.type == VAL_INT && expr_val.type == VAL_INT) {
+            if (idx_val.type != VAL_INT) {
+                fprintf(stderr, "Erro: O índice precisa ser um número inteiro.\n");
+                result.type = VAL_ERROR;
+                return result;
+            }
+
+            if (expr_val.type == VAL_INT) {
                 sym_set_array_element(nome_array, idx_val.ival, expr_val.ival);
             }
             return expr_val;
