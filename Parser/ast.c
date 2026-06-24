@@ -723,46 +723,77 @@ RuntimeValue ast_eval(ASTNode *node) {
         case AST_SWITCH: {
             RuntimeValue valor_controle = ast_eval(node->left);
             ASTNode *case_atual = node->right;
-            ASTNode *no_default = NULL;
-            int match_encontrado = 0;
+            int count = 0;
+            ASTNode *curr = case_atual;
+
+            while (curr) {
+                if (curr->kind == AST_SEQUENCE) {
+                    count++;
+                    curr = curr->left;
+                } else {
+                    count++;
+                    curr = NULL;
+                }
+            }
+
             RuntimeValue last_val = {VAL_NULL, 0, NULL, CTRL_NONE};
 
-            while (case_atual) {
-                ASTNode *bloco = case_atual;
-                if (case_atual->kind == AST_SEQUENCE) {
-                    bloco = case_atual->right;
-                    case_atual = case_atual->left;
-                } else {
-                    case_atual = NULL;
+            if (count > 0) {
+                ASTNode **cases = malloc(count * sizeof(ASTNode*));
+                int idx = count - 1;
+                curr = case_atual;
+                while (curr) {
+                    if (curr->kind == AST_SEQUENCE) {
+                        cases[idx--] = curr->right;
+                        curr = curr->left;
+                    } else {
+                        cases[idx--] = curr;
+                        curr = NULL;
+                    }
                 }
 
-                if (bloco && bloco->kind == AST_CASE_BLOCK) {
-                    if (bloco->left == NULL) {
-                        no_default = bloco->right;
-                        continue;
-                    }
-                    RuntimeValue valor_case = ast_eval(bloco->left);
-                    if (valor_controle.type == valor_case.type && valor_controle.ival == valor_case.ival) {
-                        match_encontrado = 1;
-                        if (bloco->right) {
-                            last_val = ast_eval(bloco->right);
-                            // Intercepta o break para impedir que ele feche o programa
-                            if (last_val.control_flow == CTRL_BREAK) {
-                                last_val.control_flow = CTRL_NONE;
+                int start_index = -1;
+                int default_index = -1;
+
+                // 1. Procurar correspondencia de case
+                for (int i = 0; i < count; i++) {
+                    if (cases[i] && cases[i]->kind == AST_CASE_BLOCK) {
+                        if (cases[i]->left == NULL) {
+                            default_index = i;
+                        } else {
+                            RuntimeValue valor_case = ast_eval(cases[i]->left);
+                            if (verificar_igualdade_estrita(valor_controle, valor_case)) {
+                                start_index = i;
+                                break;
                             }
                         }
-                        break;
                     }
                 }
+
+                // 2. Se nao houver correspondencia, usa o default
+                if (start_index == -1) {
+                    start_index = default_index;
+                }
+
+                // 3. Execucao em cascata (fallthrough)
+                if (start_index != -1) {
+                    for (int j = start_index; j < count; j++) {
+                        if (cases[j] && cases[j]->kind == AST_CASE_BLOCK && cases[j]->right) {
+                            last_val = ast_eval(cases[j]->right);
+                            if (last_val.control_flow == CTRL_BREAK) {
+                                last_val.control_flow = CTRL_NONE;
+                                break;
+                            }
+                            if (last_val.control_flow != CTRL_NONE) {
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                free(cases);
             }
 
-            if (!match_encontrado && no_default) {
-                last_val = ast_eval(no_default);
-                // Intercepta o break no bloco default também
-                if (last_val.control_flow == CTRL_BREAK) {
-                    last_val.control_flow = CTRL_NONE;
-                }
-            }
             return last_val;
         }
 
