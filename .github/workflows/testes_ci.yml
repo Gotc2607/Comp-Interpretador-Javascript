@@ -1,0 +1,31 @@
+name: Pipeline de Testes (CI)
+
+# Executa o robô toda vez que tiver um push ou Pull Request na branch principal
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest # O GitHub liga uma máquina Linux
+
+    steps:
+    # 1. Baixa o código do repositório
+    - name: Fazer Checkout do Código
+      uses: actions/checkout@v4
+
+    # 2. Prepara a máquina instalando o compilador, Flex e Bison
+    - name: Instalar Dependências (Flex e Bison)
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y flex bison build-essential libfl-dev
+
+    # 3. Roda o seu Makefile para compilar tudo
+    - name: Compilar o Interpretador
+      run: make clean && make
+
+    # 4. Roda o script de testes em Python
+    - name: Rodar Suíte de Testes
+      run: python3 executar_testes.py
