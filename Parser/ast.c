@@ -372,6 +372,43 @@ static int ast_check_node(ASTNode *node) {
         case AST_BINARY:
             ok &= ast_check_node(node->left);
             ok &= ast_check_node(node->right);
+            if (ok && node->left && node->right) {
+                if (node->left->kind == AST_NUMBER && node->right->kind == AST_NUMBER) {
+                    int lval = node->left->value;
+                    int rval = node->right->value;
+                    int fold = 0;
+                    int can_fold = 0;
+                    switch (node->op) {
+                        case '+': fold = lval + rval; can_fold = 1; break;
+                        case '-': fold = lval - rval; can_fold = 1; break;
+                        case '*': fold = lval * rval; can_fold = 1; break;
+                        case '/':
+                            if (rval != 0) {
+                                fold = lval / rval;
+                                can_fold = 1;
+                            }
+                            break;
+                        case '%':
+                            if (rval != 0) {
+                                fold = lval % rval;
+                                can_fold = 1;
+                            }
+                            break;
+                        case OP_Potencia:
+                            fold = (int)pow(lval, rval);
+                            can_fold = 1;
+                            break;
+                    }
+                    if (can_fold) {
+                        ast_free(node->left);
+                        ast_free(node->right);
+                        node->left = NULL;
+                        node->right = NULL;
+                        node->kind = AST_NUMBER;
+                        node->value = fold;
+                    }
+                }
+            }
             return ok;
 
         case AST_UNARY:
@@ -443,34 +480,39 @@ int ast_check(ASTNode *node) {
 static RuntimeValue eval_assign(ASTNode *node, RuntimeValue value) {
     RuntimeValue result = value;
 
-    if (strict_mode_ativo && !sym_exists(node->text)) {
-        fprintf(stderr, "ReferenceError: %s is not defined (Strict Mode)\n", node->text);
-        exit(EXIT_FAILURE);
+    Symbol *s = sym_lookup(node->text);
+    if (!s) {
+        if (strict_mode_ativo) {
+            fprintf(stderr, "ReferenceError: %s is not defined (Strict Mode)\n", node->text);
+            exit(EXIT_FAILURE);
+        }
+        sym_declare(node->text, 0);
+        s = sym_lookup(node->text);
     }
 
-    SymbolType tipo_atual = sym_get_type(node->text);
+    SymbolType tipo_atual = s->type;
 
     if (node->op == OP_atribuicao_nullish) {
-        if (sym_exists(node->text) && sym_is_initialized(node->text) && (tipo_atual == SYM_INT || tipo_atual == SYM_STRING)) {
+        if (s->initialized && (tipo_atual == SYM_INT || tipo_atual == SYM_STRING)) {
             if (tipo_atual == SYM_STRING) {
                 result.type = VAL_STRING;
-                result.sval = sym_get_str(node->text);
+                result.sval = s->sval;
             } else {
                 result.type = VAL_INT;
-                result.ival = sym_get_int(node->text);
+                result.ival = s->ival;
             }
             return result;
         }
         
         if (value.type == VAL_STRING) {
-            sym_set_str(node->text, value.sval ? value.sval : "");
+            sym_set_str_direct(s, value.sval ? value.sval : "");
         } else {
-            sym_set_int(node->text, value.ival);
+            sym_set_int_direct(s, value.ival);
         }
         return result;
     }
 
-    int atual = sym_get_int(node->text);
+    int atual = s->ival;
     int novo;
 
     if (value.type == VAL_STRING) {
@@ -481,7 +523,7 @@ static RuntimeValue eval_assign(ASTNode *node, RuntimeValue value) {
             return result;
         }
 
-        sym_set_str(node->text, value.sval ? value.sval : "");
+        sym_set_str_direct(s, value.sval ? value.sval : "");
         return result;
     }
 
@@ -511,7 +553,7 @@ static RuntimeValue eval_assign(ASTNode *node, RuntimeValue value) {
         default: novo = value.ival; break;
     }
 
-    sym_set_int(node->text, novo);
+    sym_set_int_direct(s, novo);
     result.ival = novo;
     return result;
 }
@@ -691,14 +733,18 @@ RuntimeValue ast_eval(ASTNode *node) {
             result.sval = node->text;
             return result;
 
-        case AST_IDENTIFIER:
-            if (sym_get_type(node->text) == SYM_STRING) {
-                result.type = VAL_STRING;
-                result.sval = sym_get_str(node->text);
-                return result;
+        case AST_IDENTIFIER: {
+            Symbol *s = sym_lookup(node->text);
+            if (s) {
+                if (s->type == SYM_STRING) {
+                    result.type = VAL_STRING;
+                    result.sval = s->sval;
+                    return result;
+                }
+                result.ival = s->ival;
             }
-            result.ival = sym_get_int(node->text);
             return result;
+        }
 
         case AST_ASSIGN:
             left = ast_eval(node->left);
