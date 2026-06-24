@@ -1,16 +1,52 @@
-# Executáveis
+# === Compiladores (C / Flex / Bison) ===
+# Executáveis do interpretador e scanner
 interpretador
+Lexer/scanner
 
-# Arquivos gerados pelo Flex e Bison
+# Arquivos intermediários gerados pelo Flex e Bison
 Lexer/lex.yy.c
 Parser/parser.tab.c
 Parser/parser.tab.h
 
-# Arquivos de objetos (compilação C)
+# Arquivos de objeto e compilação
 *.o
+*.out
 
-# Arquivos de cache do Python (Testes)
+# === Python (Testes e Ambiente) ===
+# Cache e arquivos compilados
 __pycache__/
 .pytest_cache/
 
 Lexer/scanner
+*.pyc
+
+# Ambientes virtuais
+venv/
+.venv/
+env/
+
+# === Documentação (Docusaurus / Node.js) ===
+# Dependências e builds da documentação
+docussaurus/node_modules/
+docussaurus/build/
+docussaurus/.docusaurus/
+docussaurus/.cache-loader/
+
+# Logs do npm e yarn
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# === IDEs e Editores ===
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# === Arquivos do Sistema Operacional ===
+.DS_Store
+Thumbs.db
+desktop.ini
