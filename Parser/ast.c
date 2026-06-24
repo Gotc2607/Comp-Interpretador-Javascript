@@ -765,8 +765,18 @@ RuntimeValue ast_eval(ASTNode *node) {
                     }
                     result.ival = left.ival + right.ival;
                     return result;
-                case '*': result.ival = left.ival * right.ival; return result;
+                case '*':
+                    if (left.type == VAL_STRING || right.type == VAL_STRING) {
+                        fprintf(stderr, "TypeError: Cannot multiply incompatible types\n");
+                        exit(EXIT_FAILURE);
+                    }
+                    result.ival = left.ival * right.ival;
+                    return result;
                 case '%':
+                    if (left.type == VAL_STRING || right.type == VAL_STRING) {
+                        fprintf(stderr, "TypeError: Cannot modulo incompatible types\n");
+                        exit(EXIT_FAILURE);
+                    }
                     if (right.ival == 0) {
                         fprintf(stderr, "Erro: Divisao por zero!\n");
                         result.type = VAL_ERROR;
@@ -774,13 +784,29 @@ RuntimeValue ast_eval(ASTNode *node) {
                     }
                     result.ival = left.ival % right.ival;
                     return result;
-                case OP_Potencia: result.ival = (int)pow(left.ival, right.ival); return result;
-                case '-': result.ival = left.ival - right.ival; return result;
+                case OP_Potencia:
+                    if (left.type == VAL_STRING || right.type == VAL_STRING) {
+                        fprintf(stderr, "TypeError: Cannot power incompatible types\n");
+                        exit(EXIT_FAILURE);
+                    }
+                    result.ival = (int)pow(left.ival, right.ival);
+                    return result;
+                case '-':
+                    if (left.type == VAL_STRING || right.type == VAL_STRING) {
+                        fprintf(stderr, "TypeError: Cannot subtract incompatible types\n");
+                        exit(EXIT_FAILURE);
+                    }
+                    result.ival = left.ival - right.ival;
+                    return result;
                 case OP_MaiorIgual: result.ival = left.ival >= right.ival; return result;
                 case OP_MenorIgual: result.ival = left.ival <= right.ival; return result;
                 case '>': result.ival = left.ival > right.ival; return result;
                 case '<': result.ival = left.ival < right.ival; return result;
                 case '/':
+                    if (left.type == VAL_STRING || right.type == VAL_STRING) {
+                        fprintf(stderr, "TypeError: Cannot divide incompatible types\n");
+                        exit(EXIT_FAILURE);
+                    }
                     if (right.ival == 0) {
                         fprintf(stderr, "Erro: Divisao por zero!\n");
                         result.type = VAL_ERROR;
