@@ -8,6 +8,9 @@
 #include "parser.tab.h"
 
 #define MAX_VARS 256
+#define MAX_LOOP_ITERATIONS 1000000
+
+static int call_depth = 0;
 
 static int verificar_igualdade_estrita(RuntimeValue left, RuntimeValue right);
 
@@ -540,8 +543,15 @@ RuntimeValue ast_eval(ASTNode *node) {
         case AST_WHILE: {
             RuntimeValue cond_val;
             RuntimeValue last_val = {VAL_NULL, 0, NULL, CTRL_NONE};
+            int loop_iters = 0;
 
             while (1) {
+                if (++loop_iters > MAX_LOOP_ITERATIONS) {
+                    fprintf(stderr, "Erro de Seguranca: Limite de iteracoes excedido (Possivel Loop Infinito).\n");
+                    last_val.type = VAL_ERROR;
+                    return last_val;
+                }
+
                 cond_val = ast_eval(node->left);
                 if (!IS_TRUTHY(cond_val)) break;
 
@@ -567,8 +577,15 @@ RuntimeValue ast_eval(ASTNode *node) {
         case AST_FOR: {
             RuntimeValue last_val = {VAL_NULL, 0, NULL, CTRL_NONE};
             if (node->left) ast_eval(node->left);
+            int loop_iters = 0;
 
             while (1) {
+                if (++loop_iters > MAX_LOOP_ITERATIONS) {
+                    fprintf(stderr, "Erro de Seguranca: Limite de iteracoes excedido (Possivel Loop Infinito).\n");
+                    last_val.type = VAL_ERROR;
+                    return last_val;
+                }
+
                 RuntimeValue cond_val;
                 if (node->mid) {
                     cond_val = ast_eval(node->mid);
@@ -601,8 +618,15 @@ RuntimeValue ast_eval(ASTNode *node) {
         case AST_DO_WHILE: {
             RuntimeValue cond_val;
             RuntimeValue last_val = {VAL_NULL, 0, NULL, CTRL_NONE};
+            int loop_iters = 0;
 
             do {
+                if (++loop_iters > MAX_LOOP_ITERATIONS) {
+                    fprintf(stderr, "Erro de Seguranca: Limite de iteracoes excedido (Possivel Loop Infinito).\n");
+                    last_val.type = VAL_ERROR;
+                    return last_val;
+                }
+
                 last_val = ast_eval(node->right);
 
                 if (last_val.control_flow == CTRL_RETURN) {
@@ -872,10 +896,24 @@ RuntimeValue ast_eval(ASTNode *node) {
             return result;
 
         case AST_FUNC_CALL: {
+            if (strcmp(node->text, "eval") == 0 || strcmp(node->text, "exec") == 0 || 
+                strcmp(node->text, "system") == 0 || strcmp(node->text, "Function") == 0) {
+                fprintf(stderr, "Erro de Seguranca: Execucao indireta ou injecao bloqueada na funcao '%s'.\n", node->text);
+                result.type = VAL_ERROR;
+                return result;
+            }
+
             ASTNode *func_node = sym_get_func(node->text);
             if (!func_node) {
                 fprintf(stderr, "Erro: Funcao '%s' nao definida.\n", node->text);
                 result.type = VAL_ERROR;
+                return result;
+            }
+
+            if (++call_depth > 1000) {
+                fprintf(stderr, "Erro de Seguranca: Stack Overflow (Limite de recursao excedido).\n");
+                result.type = VAL_ERROR;
+                call_depth--;
                 return result;
             }
 
@@ -916,6 +954,7 @@ RuntimeValue ast_eval(ASTNode *node) {
             }
 
             scope_pop();
+            call_depth--;
             return ret_val;
         }
 

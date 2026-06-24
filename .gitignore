@@ -12,3 +12,5 @@ Parser/parser.tab.h
 # Arquivos de cache do Python (Testes)
 __pycache__/
 .pytest_cache/
+
+Lexer/scanner
