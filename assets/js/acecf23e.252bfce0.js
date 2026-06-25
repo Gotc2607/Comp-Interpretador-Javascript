@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkdocussaurus=self.webpackChunkdocussaurus||[]).push([["3220"],{1912(s){s.exports=JSON.parse('{"blogBasePath":"/Comp-Interpretador-Javascript/blog","blogTitle":"Blog","authorsListPath":"/Comp-Interpretador-Javascript/blog/authors"}')}}]);
