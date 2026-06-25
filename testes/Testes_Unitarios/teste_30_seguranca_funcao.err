@@ -1,1 +1,1 @@
-Erro de Seguranca: Execucao indireta ou injecao bloqueada na funcao 'eval'.
+Erro de Seguranca [linha 1, col 7]: chamada bloqueada para funcao 'eval'.

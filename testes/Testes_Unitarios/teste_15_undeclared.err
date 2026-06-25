@@ -1,1 +1,1 @@
-Erro semantico: variavel 'a' nao declarada
+Erro de referencia [linha 1, col 14]: variavel 'a' usada sem ser declarada.
