@@ -12,7 +12,7 @@ Ao declarar um Array em escopos internos (como loops ou funções), o interpreta
 Ao fechar um bloco `{ ... }`, o método `scope_pop()` é acionado para desalocar e remover as variáveis locais do escopo que está sendo encerrado. No entanto, na implementação inicial, se a variável fosse do tipo `SYM_ARRAY`, apenas a estrutura do símbolo era desalocada. O buffer `s->arr_vals` permanecia alocado em memória heap, resultando em vazamento de memória progressivo.
 
 ### A Solução
-Adicionamos em [Parser/symboltable.c](file://wsl.localhost/Ubuntu/home/artur/Comp-Interpretador-Javascript/Parser/symboltable.c#L79-L83) a liberação explícita do buffer de elementos de arrays durante o descarte de variáveis locais em `scope_pop()`:
+Adicionamos em [Parser/symboltable.c](../Parser/symboltable.c#L79-L83) a liberação explícita do buffer de elementos de arrays durante o descarte de variáveis locais em `scope_pop()`:
 
 ```c
 void scope_pop() {
@@ -47,12 +47,12 @@ Por exemplo, ao avaliar a expressão de atribuição composta `x = x + 1`:
 Isso acarretava **6 buscas por hashing** na tabela de símbolos para uma única operação.
 
 ### A Solução
-Expostos métodos de busca e modificação diretos na API em [Parser/symboltable.h](file://wsl.localhost/Ubuntu/home/artur/Comp-Interpretador-Javascript/Parser/symboltable.h#L58-L64) e [Parser/symboltable.c](file://wsl.localhost/Ubuntu/home/artur/Comp-Interpretador-Javascript/Parser/symboltable.c#L242-L278):
+Expostos métodos de busca e modificação diretos na API em [Parser/symboltable.h](../Parser/symboltable.h#L58-L64) e [Parser/symboltable.c](../Parser/symboltable.c#L242-L278):
 - `Symbol *sym_lookup(const char *name);`
 - `void sym_set_int_direct(Symbol *s, int value);`
 - `void sym_set_str_direct(Symbol *s, char *value);`
 
-No arquivo [Parser/ast.c](file://wsl.localhost/Ubuntu/home/artur/Comp-Interpretador-Javascript/Parser/ast.c#L443-L519), a avaliação de `AST_IDENTIFIER` e `eval_assign` foi refatorada para fazer apenas um `sym_lookup` no início do comando. Toda a leitura e a escrita ocorrem diretamente através do ponteiro do símbolo `Symbol *s` retornado, eliminando as buscas repetidas. O número de buscas por hashing para `x = x + 1` foi reduzido de **6 lookups para 2 lookups**.
+No arquivo [Parser/ast.c](../Parser/ast.c#L443-L519), a avaliação de `AST_IDENTIFIER` e `eval_assign` foi refatorada para fazer apenas um `sym_lookup` no início do comando. Toda a leitura e a escrita ocorrem diretamente através do ponteiro do símbolo `Symbol *s` retornado, eliminando as buscas repetidas. O número de buscas por hashing para `x = x + 1` foi reduzido de **6 lookups para 2 lookups**.
 
 ---
 
@@ -62,7 +62,7 @@ No arquivo [Parser/ast.c](file://wsl.localhost/Ubuntu/home/artur/Comp-Interpreta
 Expressões formadas unicamente por valores literais constantes (como `2 + 3` ou `5 * 4`) eram avaliadas repetidamente no `ast_eval` a cada ciclo de execução do runtime (especialmente ineficiente dentro de laços de repetição).
 
 ### A Solução
-Implementamos o **Constant Folding** durante a fase de análise estática do compilador no método `ast_check_node` do arquivo [Parser/ast.c](file://wsl.localhost/Ubuntu/home/artur/Comp-Interpretador-Javascript/Parser/ast.c#L372-L409).
+Implementamos o **Constant Folding** durante a fase de análise estática do compilador no método `ast_check_node` do arquivo [Parser/ast.c](../Parser/ast.c#L372-L409).
 
 Ao analisar um nó `AST_BINARY`:
 1. O analisador verifica recursivamente se os nós filhos (esquerdo e direito) foram resolvidos como literais do tipo `AST_NUMBER`.
