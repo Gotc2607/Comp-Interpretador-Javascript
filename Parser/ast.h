@@ -92,6 +92,7 @@ ASTNode *ast_return(ASTNode *expr);
 ASTNode *ast_param_list(char *name, ASTNode *next);
 ASTNode *ast_arg_list(ASTNode *expr, ASTNode *next);
 void ativar_strict_mode(void);
+int is_strict_mode_active(void);
 
 /* Recupera linha/coluna de um nó para mensagens de erro */
 int ast_node_line(const ASTNode *node);

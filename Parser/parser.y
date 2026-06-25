@@ -372,6 +372,10 @@ int main(void) {
     if (parse_ok && raiz != NULL) {
         if (ast_check(raiz)) {
             ast_eval(raiz);
+        } else if (is_strict_mode_active()) {
+            ast_free(raiz);
+            raiz = NULL;
+            return 1;
         }
 
         ast_free(raiz);

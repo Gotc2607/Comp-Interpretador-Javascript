@@ -13,9 +13,12 @@
 static int strict_mode_ativo = 0;
 static int call_depth = 0;
 
-void ativar_strict_mode(void)
-{
+void ativar_strict_mode(void) {
     strict_mode_ativo = 1;
+}
+
+int is_strict_mode_active(void) {
+    return strict_mode_ativo;
 }
 
 static int verificar_igualdade_estrita(RuntimeValue left, RuntimeValue right);
