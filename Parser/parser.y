@@ -362,24 +362,14 @@ void yyerror(const char *s) {
 
 int main(void) {
     int parse_ok = (yyparse() == 0);
-
-    /* Erros de sintaxe */
     if (parse_error_count > 0) {
         fprintf(stderr,
-                "\n%d erro(s) de sintaxe encontrado(s). Corrija-os antes de executar o programa.\n",
-                parse_error_count);
-
-        if (raiz) {
-            ast_free(raiz);
-            raiz = NULL;
-        }
-
+            "\n%d erro(s) de sintaxe encontrado(s). Corrija-os antes de executar o programa.\n",
+            parse_error_count);
+        if (raiz) { ast_free(raiz); raiz = NULL; }
         return 1;
     }
-
     if (parse_ok && raiz != NULL) {
-
-        /* Faz apenas a análise semântica. Não altera o código de retorno. */
         if (ast_check(raiz)) {
             ast_eval(raiz);
         }

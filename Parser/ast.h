@@ -97,4 +97,8 @@ void ativar_strict_mode(void);
 int ast_node_line(const ASTNode *node);
 int ast_node_col(const ASTNode *node);
 
+/* Recupera linha/coluna de um nó para mensagens de erro */
+int ast_node_line(const ASTNode *node);
+int ast_node_col(const ASTNode *node);
+
 #endif
