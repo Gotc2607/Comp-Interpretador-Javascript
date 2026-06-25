@@ -1,1 +1,2 @@
-ReferenceError: x is not defined (Strict Mode)
+Erro de referencia [linha 2, col 7]: atribuicao para variavel nao declarada 'x'.
+Erro de referencia [linha 3, col 14]: variavel 'x' usada sem ser declarada.

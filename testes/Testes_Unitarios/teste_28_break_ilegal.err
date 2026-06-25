@@ -1,1 +1,1 @@
-Erro semantico: 'break' ilegal fora de um laco de repeticao
+Erro de sintaxe [linha 1, col 6]: 'break' usado fora de um laco ou switch.

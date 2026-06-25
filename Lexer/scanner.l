@@ -1,10 +1,46 @@
 %option nounput
 %option noinput
+%option yylineno
 %{
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stddef.h>
 #include "../Parser/parser.tab.h"
+#include "../Parser/ast.h"
+
+/* Rastreamento de coluna */
+int yycolumn = 1;
+int yycolumn_last_token = 1;
+
+/* Buffer com o texto da linha atual (para mensagens de erro mais ricas,
+ * ex: "esperado ';' depois de 'let x = 20'"). É reiniciado a cada '\n'
+ * e recebe o texto de cada token reconhecido. LINE_BUFFER_SIZE é
+ * definido em ast.h para ser compartilhado com o parser. */
+char current_line_buffer[LINE_BUFFER_SIZE] = "";
+static size_t line_buffer_len = 0;
+
+static void line_buffer_append(const char *text, int len) {
+    if (len < 0) return;
+    if (line_buffer_len + (size_t)len >= LINE_BUFFER_SIZE - 1)
+        len = (int)(LINE_BUFFER_SIZE - 1 - line_buffer_len);
+    if (len <= 0) return;
+    memcpy(current_line_buffer + line_buffer_len, text, (size_t)len);
+    line_buffer_len += (size_t)len;
+    current_line_buffer[line_buffer_len] = '\0';
+}
+
+static void line_buffer_reset(void) {
+    current_line_buffer[0] = '\0';
+    line_buffer_len = 0;
+}
+
+#define YY_USER_ACTION \
+    yycolumn_last_token = yycolumn; \
+    ast_current_line = yylineno; \
+    ast_current_col  = yycolumn; \
+    yycolumn += (int)yyleng; \
+    line_buffer_append(yytext, (int)yyleng);
 %}
 
 %%
@@ -83,13 +119,20 @@
 }
 
 [a-zA-Z_][a-zA-Z0-9_]* {
-    yylval.sval = strdup(yytext);
+    yylval.ident.name = strdup(yytext);
+    yylval.ident.line = yylineno;
+    yylval.ident.col  = yycolumn_last_token;
     return IDENT;
 }
 
-[ \t\r\n]+  {  }
+\n          { yycolumn = 1; yycolumn_last_token = 1; line_buffer_reset(); }
+[ \t\r]+    { /* ignora espacos */ }
 
-.           { printf("Caractere desconhecido: %s\n", yytext); }
+.           {
+    fprintf(stderr,
+        "Erro lexico [linha %d, col %d]: caractere desconhecido '%s'.\n",
+        yylineno, yycolumn_last_token, yytext);
+}
 
 %%
 

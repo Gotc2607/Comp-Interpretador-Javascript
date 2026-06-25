@@ -1,6 +1,13 @@
 #ifndef AST_H
 #define AST_H
 
+/* Tamanho do buffer com o texto da linha atual, usado pelo scanner para
+ * acumular o que foi lido e pelo parser para montar mensagens de erro
+ * mais ricas (ex.: "esperado ';' depois de 'let x = 20'"). Definido aqui
+ * para ser compartilhado entre scanner.l e parser.y sem duplicação. */
+#define LINE_BUFFER_SIZE 1024
+extern char current_line_buffer[LINE_BUFFER_SIZE];
+
 typedef struct ASTNode ASTNode;
 
 typedef enum {
@@ -51,6 +58,10 @@ typedef struct {
 #define CTRL_CONTINUE 2
 #define CTRL_RETURN 3
 
+/* Localização atual (linha/coluna) a ser preenchida pelo parser antes de criar nós */
+extern int ast_current_line;
+extern int ast_current_col;
+
 ASTNode *ast_sequence(ASTNode *left, ASTNode *right);
 ASTNode *ast_console_log(ASTNode *expression);
 ASTNode *ast_block(ASTNode *body);
@@ -81,5 +92,9 @@ ASTNode *ast_return(ASTNode *expr);
 ASTNode *ast_param_list(char *name, ASTNode *next);
 ASTNode *ast_arg_list(ASTNode *expr, ASTNode *next);
 void ativar_strict_mode(void);
+
+/* Recupera linha/coluna de um nó para mensagens de erro */
+int ast_node_line(const ASTNode *node);
+int ast_node_col(const ASTNode *node);
 
 #endif
