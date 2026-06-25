@@ -1,1 +1,1 @@
-Erro de Sintaxe: Identificador 'a' ja foi declarado neste escopo.
+Erro de sintaxe [linha 2, col 5]: identificador 'a' ja declarado neste escopo.
