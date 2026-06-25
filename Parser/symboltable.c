@@ -78,6 +78,8 @@ void scope_pop() {
             Symbol *next = s->next;
             if (s->type == SYM_STRING && s->sval)
                 free(s->sval);
+            if (s->type == SYM_ARRAY && s->arr_vals)
+                free(s->arr_vals);
             free(s);
             s = next;
         }
@@ -236,4 +238,41 @@ int sym_get_array_element(const char *name, int index) {
 int sym_is_initialized(const char *name) {
     Symbol *s = find_symbol(name);
     return s ? s->initialized : 0;
+}
+
+Symbol *sym_lookup(const char *name) {
+    return find_symbol(name);
+}
+
+void sym_set_int_direct(Symbol *s, int value) {
+    if (!s) return;
+    if (s->is_const == 1) {
+        fprintf(stderr, "TypeError: Atribuicao a variavel constante '%s'.\n", s->name);
+        return;
+    }
+    if (s->is_const == 2) {
+        s->is_const = 1;
+    }
+    s->type = SYM_INT;
+    s->ival = value;
+    s->initialized = 1;
+}
+
+void sym_set_str_direct(Symbol *s, char *value) {
+    if (!s) return;
+    if (s->is_const == 1) {
+        fprintf(stderr, "TypeError: Atribuicao a variavel constante '%s'.\n", s->name);
+        return;
+    }
+    if (s->is_const == 2) {
+        s->is_const = 1;
+    }
+    if (s->sval) free(s->sval);
+    s->type = SYM_STRING;
+    s->sval = strdup(value);
+    if (!s->sval) {
+        fprintf(stderr, "Erro de Seguranca: Memoria insuficiente para string.\n");
+        exit(EXIT_FAILURE);
+    }
+    s->initialized = 1;
 }

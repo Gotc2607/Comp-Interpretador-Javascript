@@ -29,6 +29,8 @@
 "}"         { return '}'; }
 "-"         { return '-'; }
 
+"\"use strict\"" { return KW_USE_STRICT; }
+
 \"[^\"\n]*\" {
     yylval.sval = (char *)malloc((size_t)yyleng - 1);
     if (!yylval.sval) {
@@ -85,7 +87,7 @@
     return IDENT;
 }
 
-[ \t\n]+    {  }
+[ \t\r\n]+  {  }
 
 .           { printf("Caractere desconhecido: %s\n", yytext); }
 

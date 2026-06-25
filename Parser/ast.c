@@ -10,7 +10,12 @@
 #define MAX_VARS 256
 #define MAX_LOOP_ITERATIONS 1000000
 
+static int strict_mode_ativo = 0;
 static int call_depth = 0;
+
+void ativar_strict_mode(void) {
+    strict_mode_ativo = 1;
+}
 
 static int verificar_igualdade_estrita(RuntimeValue left, RuntimeValue right);
 
@@ -359,8 +364,7 @@ static int ast_check_node(ASTNode *node) {
 
         case AST_ASSIGN:
             if (!sem_exists(node->text)) {
-                semantic_error("Erro semantico: atribuicao para variavel nao declarada '%s'", node->text);
-                ok = 0;
+                sem_declare(node->text);
             }
             ok &= ast_check_node(node->left);
             return ok;
@@ -368,6 +372,43 @@ static int ast_check_node(ASTNode *node) {
         case AST_BINARY:
             ok &= ast_check_node(node->left);
             ok &= ast_check_node(node->right);
+            if (ok && node->left && node->right) {
+                if (node->left->kind == AST_NUMBER && node->right->kind == AST_NUMBER) {
+                    int lval = node->left->value;
+                    int rval = node->right->value;
+                    int fold = 0;
+                    int can_fold = 0;
+                    switch (node->op) {
+                        case '+': fold = lval + rval; can_fold = 1; break;
+                        case '-': fold = lval - rval; can_fold = 1; break;
+                        case '*': fold = lval * rval; can_fold = 1; break;
+                        case '/':
+                            if (rval != 0) {
+                                fold = lval / rval;
+                                can_fold = 1;
+                            }
+                            break;
+                        case '%':
+                            if (rval != 0) {
+                                fold = lval % rval;
+                                can_fold = 1;
+                            }
+                            break;
+                        case OP_Potencia:
+                            fold = (int)pow(lval, rval);
+                            can_fold = 1;
+                            break;
+                    }
+                    if (can_fold) {
+                        ast_free(node->left);
+                        ast_free(node->right);
+                        node->left = NULL;
+                        node->right = NULL;
+                        node->kind = AST_NUMBER;
+                        node->value = fold;
+                    }
+                }
+            }
             return ok;
 
         case AST_UNARY:
@@ -408,6 +449,10 @@ static int ast_check_node(ASTNode *node) {
             return ok;
 
         case AST_FUNC_CALL:
+            if (strcmp(node->text, "eval") == 0 || strcmp(node->text, "exec") == 0 || 
+                strcmp(node->text, "system") == 0 || strcmp(node->text, "Function") == 0) {
+                sem_declare(node->text);
+            }
             if (!sem_exists(node->text)) {
                 semantic_error("Erro semantico: funcao '%s' nao declarada", node->text);
                 ok = 0;
@@ -435,29 +480,39 @@ int ast_check(ASTNode *node) {
 static RuntimeValue eval_assign(ASTNode *node, RuntimeValue value) {
     RuntimeValue result = value;
 
-    SymbolType tipo_atual = sym_get_type(node->text);
+    Symbol *s = sym_lookup(node->text);
+    if (!s) {
+        if (strict_mode_ativo) {
+            fprintf(stderr, "ReferenceError: %s is not defined (Strict Mode)\n", node->text);
+            exit(EXIT_FAILURE);
+        }
+        sym_declare(node->text, 0);
+        s = sym_lookup(node->text);
+    }
+
+    SymbolType tipo_atual = s->type;
 
     if (node->op == OP_atribuicao_nullish) {
-        if (sym_exists(node->text) && sym_is_initialized(node->text) && (tipo_atual == SYM_INT || tipo_atual == SYM_STRING)) {
+        if (s->initialized && (tipo_atual == SYM_INT || tipo_atual == SYM_STRING)) {
             if (tipo_atual == SYM_STRING) {
                 result.type = VAL_STRING;
-                result.sval = sym_get_str(node->text);
+                result.sval = s->sval;
             } else {
                 result.type = VAL_INT;
-                result.ival = sym_get_int(node->text);
+                result.ival = s->ival;
             }
             return result;
         }
         
         if (value.type == VAL_STRING) {
-            sym_set_str(node->text, value.sval ? value.sval : "");
+            sym_set_str_direct(s, value.sval ? value.sval : "");
         } else {
-            sym_set_int(node->text, value.ival);
+            sym_set_int_direct(s, value.ival);
         }
         return result;
     }
 
-    int atual = sym_get_int(node->text);
+    int atual = s->ival;
     int novo;
 
     if (value.type == VAL_STRING) {
@@ -468,7 +523,7 @@ static RuntimeValue eval_assign(ASTNode *node, RuntimeValue value) {
             return result;
         }
 
-        sym_set_str(node->text, value.sval ? value.sval : "");
+        sym_set_str_direct(s, value.sval ? value.sval : "");
         return result;
     }
 
@@ -498,7 +553,7 @@ static RuntimeValue eval_assign(ASTNode *node, RuntimeValue value) {
         default: novo = value.ival; break;
     }
 
-    sym_set_int(node->text, novo);
+    sym_set_int_direct(s, novo);
     result.ival = novo;
     return result;
 }
@@ -537,8 +592,12 @@ RuntimeValue ast_eval(ASTNode *node) {
             }
             return left;
 
-        case AST_BLOCK:
-            return ast_eval(node->left);
+        case AST_BLOCK: {
+            scope_push();
+            RuntimeValue val = ast_eval(node->left);
+            scope_pop();
+            return val;
+        }
 
         case AST_WHILE: {
             RuntimeValue cond_val;
@@ -674,14 +733,18 @@ RuntimeValue ast_eval(ASTNode *node) {
             result.sval = node->text;
             return result;
 
-        case AST_IDENTIFIER:
-            if (sym_get_type(node->text) == SYM_STRING) {
-                result.type = VAL_STRING;
-                result.sval = sym_get_str(node->text);
-                return result;
+        case AST_IDENTIFIER: {
+            Symbol *s = sym_lookup(node->text);
+            if (s) {
+                if (s->type == SYM_STRING) {
+                    result.type = VAL_STRING;
+                    result.sval = s->sval;
+                    return result;
+                }
+                result.ival = s->ival;
             }
-            result.ival = sym_get_int(node->text);
             return result;
+        }
 
         case AST_ASSIGN:
             left = ast_eval(node->left);
@@ -711,9 +774,59 @@ RuntimeValue ast_eval(ASTNode *node) {
                     }
                     result.ival = left.ival != right.ival;
                     return result;
-                case '+': result.ival = left.ival + right.ival; return result;
-                case '*': result.ival = left.ival * right.ival; return result;
+                case '+':
+                    if (left.type == VAL_STRING || right.type == VAL_STRING) {
+                        char buf_l[32] = "";
+                        char buf_r[32] = "";
+                        char *s_l = "";
+                        char *s_r = "";
+
+                        if (left.type == VAL_STRING) {
+                            s_l = left.sval ? left.sval : "";
+                        } else if (left.type == VAL_INT) {
+                            snprintf(buf_l, sizeof(buf_l), "%d", left.ival);
+                            s_l = buf_l;
+                        } else if (left.type == VAL_BOOL) {
+                            s_l = left.ival ? "true" : "false";
+                        } else if (left.type == VAL_NULL) {
+                            s_l = "null";
+                        }
+
+                        if (right.type == VAL_STRING) {
+                            s_r = right.sval ? right.sval : "";
+                        } else if (right.type == VAL_INT) {
+                            snprintf(buf_r, sizeof(buf_r), "%d", right.ival);
+                            s_r = buf_r;
+                        } else if (right.type == VAL_BOOL) {
+                            s_r = right.ival ? "true" : "false";
+                        } else if (right.type == VAL_NULL) {
+                            s_r = "null";
+                        }
+
+                        int len = strlen(s_l) + strlen(s_r) + 1;
+                        char *res_str = malloc(len);
+                        if (res_str) {
+                            strcpy(res_str, s_l);
+                            strcat(res_str, s_r);
+                        }
+                        result.type = VAL_STRING;
+                        result.sval = res_str;
+                        return result;
+                    }
+                    result.ival = left.ival + right.ival;
+                    return result;
+                case '*':
+                    if (left.type == VAL_STRING || right.type == VAL_STRING) {
+                        fprintf(stderr, "TypeError: Cannot multiply incompatible types\n");
+                        exit(EXIT_FAILURE);
+                    }
+                    result.ival = left.ival * right.ival;
+                    return result;
                 case '%':
+                    if (left.type == VAL_STRING || right.type == VAL_STRING) {
+                        fprintf(stderr, "TypeError: Cannot modulo incompatible types\n");
+                        exit(EXIT_FAILURE);
+                    }
                     if (right.ival == 0) {
                         fprintf(stderr, "Erro: Divisao por zero!\n");
                         result.type = VAL_ERROR;
@@ -721,13 +834,29 @@ RuntimeValue ast_eval(ASTNode *node) {
                     }
                     result.ival = left.ival % right.ival;
                     return result;
-                case OP_Potencia: result.ival = (int)pow(left.ival, right.ival); return result;
-                case '-': result.ival = left.ival - right.ival; return result;
+                case OP_Potencia:
+                    if (left.type == VAL_STRING || right.type == VAL_STRING) {
+                        fprintf(stderr, "TypeError: Cannot power incompatible types\n");
+                        exit(EXIT_FAILURE);
+                    }
+                    result.ival = (int)pow(left.ival, right.ival);
+                    return result;
+                case '-':
+                    if (left.type == VAL_STRING || right.type == VAL_STRING) {
+                        fprintf(stderr, "TypeError: Cannot subtract incompatible types\n");
+                        exit(EXIT_FAILURE);
+                    }
+                    result.ival = left.ival - right.ival;
+                    return result;
                 case OP_MaiorIgual: result.ival = left.ival >= right.ival; return result;
                 case OP_MenorIgual: result.ival = left.ival <= right.ival; return result;
                 case '>': result.ival = left.ival > right.ival; return result;
                 case '<': result.ival = left.ival < right.ival; return result;
                 case '/':
+                    if (left.type == VAL_STRING || right.type == VAL_STRING) {
+                        fprintf(stderr, "TypeError: Cannot divide incompatible types\n");
+                        exit(EXIT_FAILURE);
+                    }
                     if (right.ival == 0) {
                         fprintf(stderr, "Erro: Divisao por zero!\n");
                         result.type = VAL_ERROR;
@@ -747,46 +876,77 @@ RuntimeValue ast_eval(ASTNode *node) {
         case AST_SWITCH: {
             RuntimeValue valor_controle = ast_eval(node->left);
             ASTNode *case_atual = node->right;
-            ASTNode *no_default = NULL;
-            int match_encontrado = 0;
+            int count = 0;
+            ASTNode *curr = case_atual;
+
+            while (curr) {
+                if (curr->kind == AST_SEQUENCE) {
+                    count++;
+                    curr = curr->left;
+                } else {
+                    count++;
+                    curr = NULL;
+                }
+            }
+
             RuntimeValue last_val = {VAL_NULL, 0, NULL, CTRL_NONE};
 
-            while (case_atual) {
-                ASTNode *bloco = case_atual;
-                if (case_atual->kind == AST_SEQUENCE) {
-                    bloco = case_atual->right;
-                    case_atual = case_atual->left;
-                } else {
-                    case_atual = NULL;
+            if (count > 0) {
+                ASTNode **cases = malloc(count * sizeof(ASTNode*));
+                int idx = count - 1;
+                curr = case_atual;
+                while (curr) {
+                    if (curr->kind == AST_SEQUENCE) {
+                        cases[idx--] = curr->right;
+                        curr = curr->left;
+                    } else {
+                        cases[idx--] = curr;
+                        curr = NULL;
+                    }
                 }
 
-                if (bloco && bloco->kind == AST_CASE_BLOCK) {
-                    if (bloco->left == NULL) {
-                        no_default = bloco->right;
-                        continue;
-                    }
-                    RuntimeValue valor_case = ast_eval(bloco->left);
-                    if (valor_controle.type == valor_case.type && valor_controle.ival == valor_case.ival) {
-                        match_encontrado = 1;
-                        if (bloco->right) {
-                            last_val = ast_eval(bloco->right);
-                            // Intercepta o break para impedir que ele feche o programa
-                            if (last_val.control_flow == CTRL_BREAK) {
-                                last_val.control_flow = CTRL_NONE;
+                int start_index = -1;
+                int default_index = -1;
+
+                // 1. Procurar correspondencia de case
+                for (int i = 0; i < count; i++) {
+                    if (cases[i] && cases[i]->kind == AST_CASE_BLOCK) {
+                        if (cases[i]->left == NULL) {
+                            default_index = i;
+                        } else {
+                            RuntimeValue valor_case = ast_eval(cases[i]->left);
+                            if (verificar_igualdade_estrita(valor_controle, valor_case)) {
+                                start_index = i;
+                                break;
                             }
                         }
-                        break;
                     }
                 }
+
+                // 2. Se nao houver correspondencia, usa o default
+                if (start_index == -1) {
+                    start_index = default_index;
+                }
+
+                // 3. Execucao em cascata (fallthrough)
+                if (start_index != -1) {
+                    for (int j = start_index; j < count; j++) {
+                        if (cases[j] && cases[j]->kind == AST_CASE_BLOCK && cases[j]->right) {
+                            last_val = ast_eval(cases[j]->right);
+                            if (last_val.control_flow == CTRL_BREAK) {
+                                last_val.control_flow = CTRL_NONE;
+                                break;
+                            }
+                            if (last_val.control_flow != CTRL_NONE) {
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                free(cases);
             }
 
-            if (!match_encontrado && no_default) {
-                last_val = ast_eval(no_default);
-                // Intercepta o break no bloco default também
-                if (last_val.control_flow == CTRL_BREAK) {
-                    last_val.control_flow = CTRL_NONE;
-                }
-            }
             return last_val;
         }
 
@@ -869,7 +1029,13 @@ RuntimeValue ast_eval(ASTNode *node) {
             RuntimeValue idx_val = ast_eval(acesso->right);
             RuntimeValue expr_val = ast_eval(node->right);
 
-            if (idx_val.type == VAL_INT && expr_val.type == VAL_INT) {
+            if (idx_val.type != VAL_INT) {
+                fprintf(stderr, "Erro: O índice precisa ser um número inteiro.\n");
+                result.type = VAL_ERROR;
+                return result;
+            }
+
+            if (expr_val.type == VAL_INT) {
                 sym_set_array_element(nome_array, idx_val.ival, expr_val.ival);
             }
             return expr_val;

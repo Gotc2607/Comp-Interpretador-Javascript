@@ -58,4 +58,9 @@ SymbolType sym_get_type(const char *name);
 void      sym_declare(const char *name, int is_const);
 int       sym_is_initialized(const char *name);
 
+// Busca e Mutação Direta (Otimizações)
+Symbol    *sym_lookup(const char *name);
+void      sym_set_int_direct(Symbol *s, int value);
+void      sym_set_str_direct(Symbol *s, char *value);
+
 #endif

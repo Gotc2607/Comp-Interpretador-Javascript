@@ -62,6 +62,7 @@ static ASTNode *raiz = NULL;
 %token SWITCH CASE DEFAULT ':'
 %token BREAK CONTINUE
 %token FUNCTION RETURN ','
+%token KW_USE_STRICT
 
 %type <node> programa elementos elemento Linha Bloco lista_linhas expressao lista_cases bloco_case
 %type <node> expressao_opt params_opt param_list args_opt arg_list
@@ -89,7 +90,8 @@ static ASTNode *raiz = NULL;
 %%
 
 programa:
-    elementos { raiz = $1; $$ = $1; }
+      KW_USE_STRICT ';' elementos { ativar_strict_mode(); raiz = $3; $$ = $3; }
+    | elementos { raiz = $1; $$ = $1; }
 ;
 
 elementos:

@@ -20,4 +20,13 @@ I
 7. Funcoes e Escopo:
 8
 99
+8. Concatencacao de Strings (+):
+ab
+Val: 42
+1!
+9. Escopo de Bloco (Shadowing):
+20
+10
+10. Switch com Fallthrough:
+110
 === FIM DO TESTE ===

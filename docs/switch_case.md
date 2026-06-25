@@ -85,14 +85,15 @@ A lógica de execução do `switch` está em `Parser/ast.c` dentro de `ast_eval`
 Passos principais:
 
 1. Avalia `node->left` para obter o valor de controle.
-2. Percorre a lista encadeada de cases em `node->right`.
-3. Para cada `AST_CASE_BLOCK`, avalia o valor do case e compara com o valor de controle.
-4. Se encontrar correspondência, executa o corpo do case e para.
-5. Se não encontrar nenhum case e houver `default`, executa o body do default.
+2. Coleta e ordena os casos da esquerda para a direita (primeiro para o último) resolvendo a recursividade à esquerda do parser.
+3. Percorre os casos em ordem para encontrar o primeiro cuja expressão seja estritamente igual ao valor de controle (utilizando `verificar_igualdade_estrita`).
+4. Se nenhum caso for compatível, seleciona o bloco `default` (se presente) como ponto de partida.
+5. Inicia a execução em cascata a partir do caso selecionado (ou `default`), avaliando seus comandos sequencialmente (fallthrough).
+6. Interrompe a execução em cascata do `switch` apenas se um comando `break` (que retorna `CTRL_BREAK`) for avaliado, limpando esse sinalizador para que a execução do programa continue normalmente.
 
-### Importante
+### Suporte a Fallthrough e Break
 
-O interpretador atual não faz "fallthrough" entre cases. Ou seja, quando um case combina, apenas o corpo desse case é executado e a busca termina.
+O interpretador agora suporta **fallthrough** por padrão. Se um `case` coincidir e seu bloco não contiver um comando `break`, a execução continuará nos blocos dos casos subsequentes (inclusive do `default` se este estiver posicionado após o caso correspondente), até que um `break` seja encontrado ou a lista de casos termine.
 
 ## 5. Escopo de blocos
 
@@ -101,40 +102,56 @@ Isto é intencional para que variáveis atribuídas em cases continuem visíveis
 
 ## 6. Exemplo de uso
 
+### Com uso de `break` (comportamento tradicional)
 ```js
-x = 2;
+let x = 2;
+let y = 0;
 switch (x) {
     case 1: {
         y = 10;
+        break;
     }
     case 2: {
         y = 20;
+        break;
     }
     default: {
         y = 99;
     }
 }
-y;
+console.log(y);
 ```
 
 Saída esperada:
-
 ```txt
-Resultado: 2
-Resultado: 20
-Resultado: 20
+20
+```
+
+### Com Fallthrough (sem `break`)
+```js
+let x = 2;
+let y = 0;
+switch (x) {
+    case 1:
+        y += 1;
+    case 2:
+        y += 10;
+    case 3:
+        y += 100;
+        break;
+    case 4:
+        y += 1000;
+}
+console.log(y);
+```
+
+Saída esperada (o caso 2 executa e faz fallthrough para o caso 3):
+```txt
+110
 ```
 
 ## 7. Limitações atuais
 
-- `switch` aceita apenas comparações de valor exato entre inteiros e strings.
-- `fallthrough` não é implementado; cada `case` é isolado.
-- O `default` só é executado quando nenhum `case` coincide.
-- O conteúdo do `switch` deve estar dentro de chaves `{}` e os cases devem terminar com `:`.
+- `switch` aceita apenas comparações de valor estrito (equivalente a `===`) entre os tipos suportados (inteiros, booleanos e strings).
+- O conteúdo do `switch` deve estar dentro de chaves `{}` e os cases/default devem terminar com `:`.
 
-## 8. Como adicionar casos adicionais
-
-Para suportar `fallthrough` ou `break`, seria preciso:
-- estender o parser para reconhecer `break`;
-- alterar a avaliação para continuar após um case combinado, a menos que haja `break`;
-- ajustar a lógica de `default` para impedir sua execução quando algum case já foi executado.
